@@ -9,10 +9,27 @@
  document.querySelector('#open-plan').addEventListener('click',()=>dialog.showModal());
  document.querySelector('#close-plan').addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
- window.setTimeout(()=>{if(!window.lakeSceneReady){const p=document.querySelector('#tour-poster');if(p){p.querySelector('span:not(.poster-icon)').textContent='3D-ПРОГУЛКА ДОСТУПНА ОНЛАЙН';p.querySelector('small').textContent='Откройте сайт через интернет или посмотрите генеральный план ниже.';}}},8500);
- document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+ let sceneLoad;
+ const loadScene=()=>sceneLoad??=import('./scene.js').catch(error=>{
+   if(error.message!=='WebGL 2 unavailable')console.warn('Lake Village 3D initialization failed',error);
+   const poster=document.querySelector('#tour-poster');
+   poster.querySelector('span:not(.poster-icon)').textContent='3D-ПРОГУЛКА НЕДОСТУПНА';
+   poster.querySelector('small').textContent='Генеральный план можно открыть кнопкой ниже.';
+   const shell=document.querySelector('#tour-shell');
+   shell.dataset.architecture='no-webgl';
+   shell.querySelectorAll('button:not(#plan-mode)').forEach(button=>{button.disabled=true;});
+   shell.querySelector('#plan-mode').addEventListener('click',()=>dialog.showModal());
+ });
+ const explore=document.querySelector('#explore');
+ const observer=new IntersectionObserver(([entry])=>{
+   if(entry.isIntersecting){observer.disconnect();void loadScene();}
+ },{rootMargin:'450px'});
+ observer.observe(explore);
+ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',async()=>{
    document.querySelector('#explore').scrollIntoView({behavior:'smooth'});
    const id=b.dataset.go;
-   setTimeout(()=>window.LakeVillageTour?.focus(id),550);
+   await loadScene();
+   if(window.LakeVillageTour)window.LakeVillageTour.focus(id);
+   else if(!dialog.open)dialog.showModal();
  }));
 })();

@@ -1,152 +1,101 @@
-// LAKE VILLAGE — material and lighting pass.
-// Entirely self-contained: CC0-style procedural texture maps are bundled locally.
-// The scene remains a design interpretation, not a surveyed landscape.
+import { Reflector } from 'three/addons/objects/Reflector.js';
+
 export function installSurfaceMaterials(THREE, solid, renderer) {
   const loader = new THREE.TextureLoader();
-  const t = (name, repeatX, repeatY, srgb = true) => {
-    const texture = loader.load(`assets/textures/${name}.webp`);
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(repeatX, repeatY);
-    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
+  const cache = new Map();
+  const texture = (file,x,y,srgb) => {
+    const key = `${file}:${x}:${y}`;
+    if (!cache.has(key)) {
+      const map = loader.load(new URL(`./assets/textures/${file}.webp`,import.meta.url).href);
+      map.wrapS=map.wrapT=THREE.RepeatWrapping;
+      map.repeat.set(x,y);
+      map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+      map.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;
+      cache.set(key,map);
+    }
+    return cache.get(key);
   };
-  const bind = (material, texture, scaleColor = 0xffffff) => {
-    material.map = texture;
-    material.color.setHex(scaleColor);
-    material.needsUpdate = true;
+  const apply = (material,name,x=1,y=1,tint=0xffffff) => {
+    material.map=texture(`${name}-color`,x,y,true);
+    material.normalMap=texture(`${name}-normal`,x,y,false);
+    material.roughnessMap=texture(`${name}-roughness`,x,y,false);
+    material.normalScale.set(.50,.50);
+    material.color.setHex(tint);
+    material.needsUpdate=true;
   };
-  bind(solid.ground, t('forest-floor', 40, 35), 0xffffff);
-  solid.ground.normalMap = t('forest-floor-normal', 40, 35, false);
-  solid.ground.normalScale.set(.36, .36);
-  solid.ground.needsUpdate = true;
-  bind(solid.meadow, t('forest-floor', 8, 8), 0xd5e8d1);
-  bind(solid.path, t('gravel', 1, 1), 0xd6cbb0);
-  bind(solid.sand, t('sand', .09, .09), 0xffffff);
-  bind(solid.timber, t('aged-timber', 2.4, 1.6), 0xe6c7a1);
-  bind(solid.timberLight, t('aged-timber', 2.1, 2.2), 0xf1d5a6);
-  bind(solid.darkwood, t('aged-timber', 1.7, 2.0), 0xa89377);
-  bind(solid.roof, t('slate-roof', 3.4, 1.9), 0xb2c2ba);
-  solid.roof.metalness = .28;
-  solid.roof.roughness = .45;
-  const glass = [solid.windows, solid.litGlass];
-  glass.forEach(m => {
-    m.roughness = .085;
-    m.metalness = .22;
-    m.envMapIntensity = 1.4;
-    m.opacity = m === solid.litGlass ? .50 : .38;
-    m.depthWrite = false;
-    m.needsUpdate = true;
-  });
-  return t;
+  apply(solid.ground,'forest',168,168);
+  apply(solid.path,'gravel',1,1,0xd8c7ac);
+  solid.sand.map=texture('sand-color',1,1,true);
+  apply(solid.timber,'siding',2.4,1.6,0xe6c7a1);
+  apply(solid.timberLight,'deck',2.1,2.2,0xf1d5a6);
+  apply(solid.darkwood,'siding',1.7,2,0x9b8b78);
+  for (const material of [solid.windows,solid.litGlass]) {
+    material.roughness=.12;
+    material.depthWrite=false;
+    material.opacity=material===solid.litGlass?.39:.26;
+  }
 }
 
-export function makeAtmosphere(THREE, scene, renderer) {
-  const uniforms = { uNight: {value: 0}, uHaze: {value: 1} };
-  const mat = new THREE.ShaderMaterial({
-    uniforms, side: THREE.BackSide, depthWrite: false, fog: false, toneMapped: false,
-    vertexShader: `varying vec3 vDir;
-      void main(){vDir=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position=p.xyww;}`,
-    fragmentShader: `varying vec3 vDir;uniform float uNight;
+export function makeLakeWater(THREE,geometry,level) {
+  const shader = {
+    name:'LakeVillageWater',
+    uniforms:{
+      color:{value:null}, tDiffuse:{value:null}, textureMatrix:{value:null},
+      time:{value:0}, night:{value:0}, reflectScene:{value:0}, sunDirection:{value:new THREE.Vector3(-.5,.6,.5)},
+    },
+    vertexShader:`
+      uniform mat4 textureMatrix;
+      varying vec4 reflectionUV;
+      varying vec3 world;
       void main(){
-        vec3 d=normalize(vDir);
-        float alt=clamp(d.y*0.5+0.5,0.,1.);
-        vec3 horizon=vec3(.78,.77,.68);
-        vec3 top=vec3(.23,.40,.54);
-        float blend=smoothstep(.43,.93,alt);
-        vec3 day=mix(horizon,top,blend);
-        day=mix(vec3(.39,.48,.46),day,smoothstep(.31,.50,alt));
-        vec3 sunDir=normalize(vec3(-.53,.63,.57));
-        float sun=pow(max(dot(d,sunDir),0.),850.);
-        float halo=pow(max(dot(d,sunDir),0.),16.);
-        day+=vec3(1.,.73,.40)*halo*.28 + vec3(1.,.93,.72)*sun*1.7;
-        float cloud=sin(d.x*40.+d.z*26.)*sin(d.x*61.-d.z*43.);
-        cloud*=smoothstep(.53,.77,alt)*smoothstep(.93,.72,alt);
-        day+=cloud*.012;
-        vec3 night=mix(vec3(.045,.09,.17),vec3(.004,.017,.043),smoothstep(.33,.9,alt));
-        night+=vec3(.24,.18,.2)*pow(max(dot(d,normalize(vec3(.5,.12,.6))),0.),65.)*.16;
-        gl_FragColor=vec4(mix(day,night,uNight),1.);
-      }`
-  });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(540,32,20),mat);
-  mesh.renderOrder = -1000;
-  mesh.frustumCulled = false;
-  scene.add(mesh);
-  // Reflection map built once: distant trees, sky and warm horizon.
-  const c=document.createElement('canvas');c.width=1024;c.height=512;
-  const ctx=c.getContext('2d');
-  const grad=ctx.createLinearGradient(0,0,0,512);
-  grad.addColorStop(0,'#416f95');grad.addColorStop(.27,'#7596a0');
-  grad.addColorStop(.5,'#e4cfa9');grad.addColorStop(.61,'#4e6250');
-  grad.addColorStop(.78,'#182f29');grad.addColorStop(1,'#10241d');
-  ctx.fillStyle=grad;ctx.fillRect(0,0,1024,512);
-  const tex=new THREE.CanvasTexture(c);tex.mapping=THREE.EquirectangularReflectionMapping;
-  tex.colorSpace=THREE.SRGBColorSpace;
-  const pmrem=new THREE.PMREMGenerator(renderer);
-  scene.environment=pmrem.fromEquirectangular(tex).texture;
-  pmrem.dispose();tex.dispose();
-  return {mesh,uniforms};
-}
-
-export function makeLakeWater(THREE) {
-  const uniforms = {time:{value:0}, night:{value:0}};
-  const material = new THREE.ShaderMaterial({
-    uniforms, side:THREE.DoubleSide, transparent:false, depthWrite:true,
-    vertexShader:`varying vec3 vWorld;varying vec2 vUV;
-      void main(){vec4 pos=modelMatrix*vec4(position,1.);vWorld=pos.xyz;vUV=uv;
-      gl_Position=projectionMatrix*viewMatrix*pos;}`,
+        reflectionUV=textureMatrix*vec4(position,1.);
+        world=(modelMatrix*vec4(position,1.)).xyz;
+        gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);
+      }`,
     fragmentShader:`
-      precision highp float;
-      varying vec3 vWorld; varying vec2 vUV;
-      uniform float time; uniform float night;
-      float wave(vec2 p){
-        p += time*vec2(.17,-.11);
-        float a=sin(dot(p,vec2(.44,.23)))*.22;
-        a+=sin(dot(p,vec2(.86,-.57))+time*.4)*.105;
-        a+=sin(dot(p,vec2(1.9,.72))-time*1.15)*.037;
-        a+=sin(dot(p,vec2(3.36,-2.08))+time*1.3)*.009;
-        a+=sin(dot(p,vec2(7.7,5.1))-time*.6)*.004;
-        return a;
-      }
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
-      float noise2(vec2 p){
-        vec2 i=floor(p), f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);
-      }
+      uniform sampler2D tDiffuse;
+      uniform float time,night,reflectScene;
+      uniform vec3 sunDirection;
+      varying vec4 reflectionUV;
+      varying vec3 world;
       void main(){
-        vec2 p=vWorld.xz;
-        float eps=.09;
-        vec3 n=normalize(vec3(
-          -(wave(p+vec2(eps,0.))-wave(p-vec2(eps,0.)))/(2.*eps),
-          1.,
-          -(wave(p+vec2(0.,eps))-wave(p-vec2(0.,eps)))/(2.*eps)
-        ));
-        vec3 eye=normalize(cameraPosition-vWorld);
-        float NdotV=max(dot(n,eye),0.0001);
-        float fresnel=.025+.975*pow(1.-NdotV,5.);
-        float deep=clamp(1.-length(vec2(p.x/59.,p.y/50.)),0.,1.);
-        vec3 water= mix(vec3(.12,.27,.25),vec3(.021,.122,.154),smoothstep(.02,.72,deep));
-        float cloud=noise2(p*.035+vec2(time*.008,-time*.004));
-        water += vec3(.017,.028,.016)*(cloud-.5);
-        vec3 horizon=mix(vec3(.49,.66,.69),vec3(.77,.76,.65),smoothstep(.15,.85,n.y));
-        float blue=pow(1.-NdotV,3.0);
-        horizon=mix(horizon,vec3(.28,.48,.66),blue*.48);
-        water=mix(water,horizon,fresnel*.72);
-        vec3 sunDir=normalize(vec3(-.53,.63,.57));
-        float refl=max(dot(reflect(-sunDir,n),eye),0.0);
-        float glint=pow(refl,260.)*1.3+pow(refl,52.)*.14;
-        float glimmer=noise2(p*5.4+time*.33);
-        glint *= smoothstep(.28,.83,glimmer)*1.55+.2;
-        water+=vec3(1.0,.78,.54)*glint;
-        float micro=sin(p.x*9.7+time*1.8)*sin(p.y*7.5-time*1.3);
-        water+=vec3(.075,.09,.07)*max(micro,0.)*.026;
-        vec3 darkNight=water*.12+vec3(.008,.017,.029);
-        float moon=pow(max(dot(reflect(-normalize(vec3(-.2,.8,.4)),n),eye),0.),210.);
-        water=mix(water,darkNight+vec3(.43,.49,.58)*moon*.21,night);
-        gl_FragColor=vec4(max(water,vec3(0.)),1.);
-      }`
-  });
-  return {material,uniforms};
+        vec2 p=world.xz;
+        vec2 a=vec2(.62,.27),b=vec2(.51,-1.22),c=vec2(3.68,2.51),d=vec2(5.82,-3.9);
+        vec2 slope=.028*a*cos(dot(p,a)+time*.55)+.023*b*cos(dot(p,b)-time*.71)
+          +.005*c*cos(dot(p,c)+time*1.19)+.0028*d*cos(dot(p,d)-time*.93);
+        vec3 n=normalize(vec3(-slope.x,1.,-slope.y));
+        vec3 eye=normalize(cameraPosition-world);
+        float incidence=max(dot(n,eye),0.);
+        float fresnel=.0204+.9796*pow(1.-incidence,5.);
+        vec2 lake=p/vec2(59.,50.);
+        float angle=atan(lake.x,lake.y);
+        float shore=1.+.027*sin(3.*angle+.4)+.024*cos(5.*angle-1.)+.011*sin(11.*angle)+.006*cos(19.*angle+.2);
+        float depth=(shore-length(lake))*54.;
+        vec3 shallow=vec3(.19,.23,.123);
+        shallow+=.014*sin(p.x*4.1)*sin(p.y*4.7);
+        vec3 deep=vec3(.011,.066,.073);
+        vec3 volume=mix(shallow,deep,1.-exp(-max(depth,0.)*.29));
+        vec3 sky=mix(vec3(.34,.46,.50),vec3(.12,.18,.27),night);
+        vec2 uv=clamp(reflectionUV.xy/reflectionUV.w+slope*.096,vec2(.003),vec2(.997));
+        vec3 reflection=mix(sky,texture2D(tDiffuse,uv).rgb,reflectScene);
+        float glint=pow(max(dot(reflect(-sunDirection,n),eye),0.),320.);
+        volume*=mix(1.,.27,night);
+        vec3 light=mix(vec3(1.,.85,.62),vec3(1.,.42,.19),night);
+        gl_FragColor=vec4(mix(volume,reflection,fresnel)+light*glint*mix(.42,.16,night),1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  };
+  const water = new Reflector(geometry,{shader,textureWidth:512,textureHeight:320,
+    clipBias:.002,multisample:0});
+  water.rotation.x=-Math.PI/2;
+  water.position.y=level;
+  const uniforms=water.material.uniforms;
+  const reflect=water.onBeforeRender;
+  water.onBeforeRender=function(...args) {
+    if (uniforms.reflectScene.value && args[0].getRenderTarget()===null) reflect.apply(this,args);
+  };
+  return {water,uniforms};
 }
 
 // Instanced organic evergreen: irregular needle sprays instead of two plastic cones.
@@ -192,13 +141,13 @@ export function makeSpruceGeometry(THREE) {
   return g;
 }
 
-export function scatterUnderstory(THREE, scene, rng, avoidBuilding) {
+export function scatterUnderstory(THREE, scene, rng, avoidBuilding, groundHeight) {
   const n=window.innerWidth<760?1500:4300;
   const vertices=[-.16,0,0, .15,0,0, 0,.7,0,
                   0,0,-.16,0,0,.15,0,.64,0,
                   -.11,0,-.13,.14,0,.13,0,.56,-.01];
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.computeVertexNormals();
-  const mat=new THREE.MeshStandardMaterial({color:0x6e8a49,side:THREE.DoubleSide,transparent:true,opacity:.92,roughness:1,depthWrite:true});
+  const mat=new THREE.MeshStandardMaterial({color:0x6e8a49,side:THREE.DoubleSide,roughness:1});
   const grass=new THREE.InstancedMesh(geo,mat,n);
   grass.frustumCulled=false;
   const o=new THREE.Object3D();let count=0,tries=0;
@@ -206,7 +155,7 @@ export function scatterUnderstory(THREE, scene, rng, avoidBuilding) {
     const x=(rng()-.5)*345,z=(rng()-.5)*295;
     if((x/63)**2+(z/54)**2<1.2||avoidBuilding(x,z,7))continue;
     if(Math.abs(x)>143&&rng()>.58)continue;
-    o.position.set(x,.03,z);o.scale.setScalar(.42+rng()*.9);o.rotation.set(0,rng()*6.28,0);
+    o.position.set(x,groundHeight(x,z),z);o.scale.setScalar(.42+rng()*.9);o.rotation.set(0,rng()*6.28,0);
     o.updateMatrix();grass.setMatrixAt(count,o.matrix);
     grass.setColorAt(count,new THREE.Color().setHSL(.22+rng()*.09,.19+rng()*.16,.26+rng()*.18));
     count++;
@@ -216,18 +165,19 @@ export function scatterUnderstory(THREE, scene, rng, avoidBuilding) {
   return grass;
 }
 
-export function scatterReeds(THREE,scene,rng,shoreRadius){
+export function scatterReeds(THREE,scene,rng,shoreRadius,groundHeight){
   const count=window.innerWidth<760?220:550;
   const g=new THREE.CylinderGeometry(.017,.055,1.45,3);
   const m=new THREE.MeshStandardMaterial({color:0x728456,roughness:1,side:THREE.DoubleSide});
   const reeds=new THREE.InstancedMesh(g,m,count);const o=new THREE.Object3D();
   for(let i=0;i<count;i++){
     const a=rng()*6.283,r=shoreRadius(a);
+    const cluster=Math.pow(Math.sin(a*8.+.6),2);
     const x=Math.sin(a)*59*r*(.987+(rng()-.5)*.08);
     const z=Math.cos(a)*50*r*(.987+(rng()-.5)*.08);
-    o.position.set(x,.53,z);
+    o.position.set(x,Math.max(.045,groundHeight(x,z))+.35,z);
     o.rotation.set((rng()-.5)*.22,rng()*6.28,(rng()-.5)*.18);
-    o.scale.setScalar(.55+rng()*.83);o.updateMatrix();reeds.setMatrixAt(i,o.matrix);
+    o.scale.setScalar(cluster<.17 ? .08 : .54+rng()*.83);o.updateMatrix();reeds.setMatrixAt(i,o.matrix);
   }
   reeds.instanceMatrix.needsUpdate=true;reeds.frustumCulled=false;
   scene.add(reeds);return reeds;

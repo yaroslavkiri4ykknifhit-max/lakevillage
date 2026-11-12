@@ -15,10 +15,11 @@
   <link rel="stylesheet" href="styles.css" />
   <script type="importmap">
     {"imports":{
-      "three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
-      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      "three":"./assets/vendor/three/three.module.min.js",
+      "three/addons/":"./assets/vendor/three/addons/"
     }}
   </script>
+  <link rel="icon" href="data:," />
 </head>
 <body>
   <header class="site-header" id="header">
@@ -53,7 +54,7 @@
     </section>
 
     <section class="explore" id="explore" aria-labelledby="tour-title">
-      <div class="explore-heading layout"><div class="section-kicker"><span class="gold-rule"></span> ИНТЕРАКТИВНАЯ МОДЕЛЬ</div><div class="explore-heading-row"><h2 id="tour-title">Прогуляйтесь <em>по будущему.</em></h2><p>Свободно осматривайте территорию, выбирайте объекты и меняйте ракурс. Детализированная модель воссоздана по генеральному плану проекта. Можно осмотреть фасады, интерьер и берег озера.</p></div></div>
+      <div class="explore-heading layout"><div class="section-kicker"><span class="gold-rule"></span> ИНТЕРАКТИВНАЯ МОДЕЛЬ</div><div class="explore-heading-row"><h2 id="tour-title">Прогуляйтесь <em>по будущему.</em></h2><p>Свободно осматривайте территорию, выбирайте объекты и меняйте ракурс. Генплан показывает расположение объектов. Два демонстрационных дома можно осмотреть с террасы и из гостиной.</p></div></div>
       <div class="tour-shell" id="tour-shell">
         <div class="tour-canvas-wrap" id="tour-canvas-wrap"><canvas id="lake-canvas" aria-label="Интерактивная 3D-модель территории Lake Village"></canvas>
           <div class="tour-poster" id="tour-poster"><span class="poster-icon">✦</span><span>ЗАГРУЗКА 3D-ТЕРРИТОРИИ</span><small>Если 3D не поддерживается, посмотрите генплан ниже.</small></div>
@@ -66,7 +67,7 @@
         <div class="tour-bottom"><div class="tour-mode" role="group" aria-label="Режим осмотра"><button class="mode-button active" id="orbit-mode">◉ <span>Облёт</span></button><button class="mode-button" id="walk-mode">⌖ <span>Прогулка</span></button><button class="mode-button" id="plan-mode">▦ <span>Генплан</span></button></div><div class="tour-hint" id="tour-hint">МЫШЬ: ВРАЩАТЬ · КОЛЁСИКО: ПРИБЛИЗИТЬ</div><span class="tour-corner">LV / 3D.01</span></div>
         <div class="tour-mobile-advice">Проведите пальцем, чтобы повернуть · Двумя пальцами — приблизить</div>
       </div>
-      <div class="model-notice layout"><span>✳</span> Детализированная концептуальная 3D-визуализация. Это не архитектурная BIM-модель и не фотография: точные размеры, материалы и планировки будут определяться проектной документацией.</div>
+      <div class="model-notice layout"><span>✳</span> Концептуальная визуализация. Два демонстрационных дома выполнены по открытым габаритам производителя. Планировки, отделка и привязка к местности предварительные.</div>
     </section>
 
     <section class="places section-pad" id="experiences">
@@ -87,6 +88,6 @@
   <footer><div class="layout footer-inner"><a class="brand footer-brand" href="#top"><svg class="brand-leaf" width="23" height="34" viewBox="0 0 28 40" fill="none"><path d="M24 2C6 7 1 18 4 27c2 6 9 8 15 4C25 27 26 16 24 2Z" stroke="currentColor" stroke-width="1.2"/><path d="M7 36C10 24 16 17 24 2" stroke="currentColor" stroke-width="1"/></svg><span class="brand-word">LAKE VILLAGE<small>B E L A R U S</small></span></a><div class="footer-copy">ПРИРОДА · ЛЮДИ · СОБЫТИЯ</div><div class="footer-right">КОНЦЕПЦИЯ. БЕЛАРУСЬ. 2027—2028.</div></div></footer>
   <dialog id="plan-dialog" class="plan-dialog"><button id="close-plan" class="close-plan" aria-label="Закрыть">×</button><img src="assets/slide-6.webp" alt="Генеральный план Lake Village крупно" /><p>Генеральный план из инвестиционной презентации · концепция</p></dialog>
   <script src="ui.js" defer></script>
-  <script type="module" src="scene.js"></script>
+
 </body>
 </html>
