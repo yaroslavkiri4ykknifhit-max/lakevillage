@@ -69,3 +69,16 @@ python3 -m http.server 8000
 - Added roof-seam, trim, deck and exterior furnishing details to the cabins. Preserved the resort masterplan layout and all tour modes.
 - New `Кино / Быстро` switch trades rendering quality for frame rate, especially on mobile devices.
 - The geometry is still a **conceptual model**, not surveyed terrain or the exact manufacturer's CAD models. Photoreal architectural-grade deliverables would need licensed or supplied high-detail house models, botanical assets, surveyed terrain, verified measurements and a tested production render pipeline.
+
+
+## Detailed architectural pass — November 2026
+
+The latest source includes a new `architecture.js` procedural detailing module. It adds:
+- A-Frame facade and roof framing, second-floor loft, interior furniture and lighting, plus private hot tub, sauna and BBQ.
+- Barnhouse standing seam / timber slats, panoramic glazing, furnished open-plan interiors, deck screens and outdoor spa zones.
+- Glazed greenhouse with visible banquet seating, potted greenery, chandelier and string lights.
+- Restaurant with two-level facade, balcony railings, terrace planting and furnished rooms.
+- Birch understory, pebble bank, grasses and path bollards with instancing to reduce draw calls.
+- A richer lake surface shader with Fresnel reflections, multi-scale wind waves, glint and shallow/deep-water coloring.
+
+**Disclosure:** All buildings, terrain and interior details are original *conceptual* procedural reconstructions based on the supplied slide deck and publicly described reference styles. They are not licensed manufacturer 3D product files, as-built BIM objects or construction drawings. The current version is not a photoreal digital twin. Client-side Three.js loads over jsDelivr; a network connection is required for the 3D tour.

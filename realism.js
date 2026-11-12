@@ -2,44 +2,9 @@
 // Entirely self-contained: CC0-style procedural texture maps are bundled locally.
 // The scene remains a design interpretation, not a surveyed landscape.
 export function installSurfaceMaterials(THREE, solid, renderer) {
-  // Self-contained procedural PBR maps: no missing image downloads and GitHub Pages safe.
-  const textureCache = new Map();
-  function makeMap(name) {
-    if(textureCache.has(name)) return textureCache.get(name);
-    const canvas=document.createElement('canvas'); canvas.width=canvas.height=256;
-    const ctx=canvas.getContext('2d'), out=ctx.createImageData(256,256);
-    let seed=37;for(let i=0;i<name.length;i++)seed=(seed*33+name.charCodeAt(i))>>>0;
-    const noise=()=>((seed=(Math.imul(1664525,seed)+1013904223)>>>0)/4294967296);
-    const shades={
-      'forest-floor':[76,83,55], 'forest-floor-normal':[128,128,255],
-      'gravel':[154,143,125], 'aged-timber':[127,91,63],
-      'slate-roof':[53,62,58], 'sand':[198,178,137]
-    };
-    const base=shades[name]||[115,119,103], grain=new Float32Array(256*256);
-    for(let i=0;i<grain.length;i++)grain[i]=noise();
-    for(let y=0;y<256;y++)for(let x=0;x<256;x++){
-      const i=y*256+x,at=i*4, f=grain[i], wide=Math.sin(x*.12+y*.018+Math.sin(x*.025)*2)*.5+.5;
-      const medium=Math.sin(x*.037+y*.061)*.5+.5;
-      const strength=name==='aged-timber'?20:name==='gravel'?31:21;
-      let d=(f-.5)*strength+(wide-.5)*strength*.8+(medium-.5)*8;
-      if(name==='slate-roof')d+=(x%48<2?-24:0);
-      if(name==='aged-timber')d+=(Math.sin(x*.31+Math.sin(y*.025)*.8))*10;
-      if(name==='forest-floor-normal'){
-        out.data[at]=128+(f-.5)*25;out.data[at+1]=128+(wide-.5)*25;out.data[at+2]=252;
-      } else {
-        out.data[at]=Math.max(0,Math.min(255,base[0]+d));
-        out.data[at+1]=Math.max(0,Math.min(255,base[1]+d*.9));
-        out.data[at+2]=Math.max(0,Math.min(255,base[2]+d*.8));
-      }
-      out.data[at+3]=255;
-    }
-    ctx.putImageData(out,0,0);
-    const texture=new THREE.CanvasTexture(canvas);
-    textureCache.set(name,texture);
-    return texture;
-  }
+  const loader = new THREE.TextureLoader();
   const t = (name, repeatX, repeatY, srgb = true) => {
-    const texture = makeMap(name);
+    const texture = loader.load(`assets/textures/${name}.webp`);
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(repeatX, repeatY);
     texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -69,7 +34,7 @@ export function installSurfaceMaterials(THREE, solid, renderer) {
     m.roughness = .085;
     m.metalness = .22;
     m.envMapIntensity = 1.4;
-    m.opacity = .9;
+    m.opacity = m === solid.litGlass ? .50 : .38;
     m.depthWrite = false;
     m.needsUpdate = true;
   });
@@ -130,37 +95,55 @@ export function makeLakeWater(THREE) {
     vertexShader:`varying vec3 vWorld;varying vec2 vUV;
       void main(){vec4 pos=modelMatrix*vec4(position,1.);vWorld=pos.xyz;vUV=uv;
       gl_Position=projectionMatrix*viewMatrix*pos;}`,
-    fragmentShader:`varying vec3 vWorld;varying vec2 vUV;
-      uniform float time;uniform float night;
+    fragmentShader:`
+      precision highp float;
+      varying vec3 vWorld; varying vec2 vUV;
+      uniform float time; uniform float night;
       float wave(vec2 p){
-        return .24*sin(p.x*.49+p.y*.17+time*.63)
-             + .13*sin(p.x*1.17-p.y*.56+time*.94)
-             + .055*sin(p.x*2.94+p.y*1.69-time*1.23)
-             + .07*sin(p.y*.41-time*.42);
+        p += time*vec2(.17,-.11);
+        float a=sin(dot(p,vec2(.44,.23)))*.22;
+        a+=sin(dot(p,vec2(.86,-.57))+time*.4)*.105;
+        a+=sin(dot(p,vec2(1.9,.72))-time*1.15)*.037;
+        a+=sin(dot(p,vec2(3.36,-2.08))+time*1.3)*.009;
+        a+=sin(dot(p,vec2(7.7,5.1))-time*.6)*.004;
+        return a;
+      }
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+      float noise2(vec2 p){
+        vec2 i=floor(p), f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);
       }
       void main(){
         vec2 p=vWorld.xz;
-        float e=.12;
-        float x=(wave(p+vec2(e,0.))-wave(p-vec2(e,0.)))/(2.*e);
-        float z=(wave(p+vec2(0.,e))-wave(p-vec2(0.,e)))/(2.*e);
-        vec3 normal=normalize(vec3(-x,1.0,-z));
-        vec3 viewDir=normalize(cameraPosition-vWorld);
-        float facing=clamp(dot(normal,viewDir),0.,1.);
-        float fresnel=pow(1.-facing,4.);
-        vec3 water=vec3(.065,.25,.27);
-        vec3 deep=vec3(.035,.13,.16);
-        water=mix(water,deep,clamp(.5+.48*wave(p+time*.01),0.,1.));
-        vec3 sky=vec3(.57,.68,.65);
-        water=mix(water,sky,clamp(fresnel*.63,.0,.75));
-        vec3 sun=normalize(vec3(-.53,.63,.57));
-        vec3 reflected=reflect(-sun,normal);
-        float glint=pow(max(dot(reflected,viewDir),0.),210.);
-        float scatter=pow(max(dot(reflected,viewDir),0.),18.);
-        water+=vec3(1.,.77,.45)*(glint*.95+scatter*.09);
-        float ripple=sin(p.x*4.9+p.y*2.9+time*.77)*sin(p.x*2.1-p.y*3.1-time);
-        water+=vec3(.07,.13,.13)*max(ripple,0.)*.16;
-        water=mix(water,water*.12+vec3(.009,.02,.034),night);
-        gl_FragColor=vec4(water,1.);
+        float eps=.09;
+        vec3 n=normalize(vec3(
+          -(wave(p+vec2(eps,0.))-wave(p-vec2(eps,0.)))/(2.*eps),
+          1.,
+          -(wave(p+vec2(0.,eps))-wave(p-vec2(0.,eps)))/(2.*eps)
+        ));
+        vec3 eye=normalize(cameraPosition-vWorld);
+        float NdotV=max(dot(n,eye),0.0001);
+        float fresnel=.025+.975*pow(1.-NdotV,5.);
+        float deep=clamp(1.-length(vec2(p.x/59.,p.y/50.)),0.,1.);
+        vec3 water= mix(vec3(.12,.27,.25),vec3(.021,.122,.154),smoothstep(.02,.72,deep));
+        float cloud=noise2(p*.035+vec2(time*.008,-time*.004));
+        water += vec3(.017,.028,.016)*(cloud-.5);
+        vec3 horizon=mix(vec3(.49,.66,.69),vec3(.77,.76,.65),smoothstep(.15,.85,n.y));
+        float blue=pow(1.-NdotV,3.0);
+        horizon=mix(horizon,vec3(.28,.48,.66),blue*.48);
+        water=mix(water,horizon,fresnel*.72);
+        vec3 sunDir=normalize(vec3(-.53,.63,.57));
+        float refl=max(dot(reflect(-sunDir,n),eye),0.0);
+        float glint=pow(refl,260.)*1.3+pow(refl,52.)*.14;
+        float glimmer=noise2(p*5.4+time*.33);
+        glint *= smoothstep(.28,.83,glimmer)*1.55+.2;
+        water+=vec3(1.0,.78,.54)*glint;
+        float micro=sin(p.x*9.7+time*1.8)*sin(p.y*7.5-time*1.3);
+        water+=vec3(.075,.09,.07)*max(micro,0.)*.026;
+        vec3 darkNight=water*.12+vec3(.008,.017,.029);
+        float moon=pow(max(dot(reflect(-normalize(vec3(-.2,.8,.4)),n),eye),0.),210.);
+        water=mix(water,darkNight+vec3(.43,.49,.58)*moon*.21,night);
+        gl_FragColor=vec4(max(water,vec3(0.)),1.);
       }`
   });
   return {material,uniforms};

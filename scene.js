@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { installSurfaceMaterials, makeAtmosphere, makeLakeWater, makeSpruceGeometry, scatterUnderstory, scatterReeds } from './realism.js';
+import { createArchitecturalKit } from './architecture.js';
 
 // LAKE VILLAGE — conceptual, procedural 3D masterplan.
 // All coordinates are illustrative, derived from the spatial relationships
@@ -34,6 +35,7 @@ const solid = {
 };
 const litSurfaces = [];
 const scene = new THREE.Scene();
+const architecturalKit=createArchitecturalKit(THREE,scene,solid,rnd);
 scene.background = new THREE.Color(0x96aba4);
 scene.fog = new THREE.FogExp2(0x96aba4,.0027);
 const camera = new THREE.PerspectiveCamera(48, 1, .5, 700);
@@ -202,13 +204,18 @@ function makeAframe(x,z,key){
  box(g,.13,3.9,.14,-1.1,2.32,zFront+.34,solid.trim);
  box(g,.13,3.9,.14,1.1,2.32,zFront+.34,solid.trim);
  for(let xx of [-4.2,4.2]){box(g,.21,1.2,.2,xx,1.1,zFront+4.6,solid.timberLight);}
+ architecturalKit.detailAframe(g,w,d,h);
  if(key)houseRefs[key]={group:g,kind:'aframe',floor:V(0,2.6,1),forward:V(0,2.5,7)};
  selectable.push(g);return g;
 }
 function makeBarn(x,z,key){
  const g=new THREE.Group();g.position.set(x,0,z);orientToCenter(g,x,z);scene.add(g);
  const w=11.1,d=12,h=7.7;
- box(g,w,5.2,d,0,2.6,0,solid.timber);
+ // Four structural walls are not baked into a giant solid block:
+ // the panoramic facade must reveal furnished rooms behind glass.
+ box(g,.28,5.2,d,-w/2+.14,2.6,0,solid.timber);
+ box(g,.28,5.2,d,w/2-.14,2.6,0,solid.timber);
+ box(g,w,5.2,.24,0,2.6,-d/2+.12,solid.timber);
  makeDeck(g,12.3,4.6,d/2+2.45);
  finishTerrace(g,12.3,d/2+1.2);
  box(g,w,.32,d,0,.15,0,solid.darkwood);
@@ -231,6 +238,7 @@ function makeBarn(x,z,key){
  }
  box(g,.18,5.0,.2,-1.45,2.7,d/2+.26,solid.trim);
  for(let i=0;i<6;i++){box(g,.12,5.15,.10,-w/2+.5+i*1.7,2.7,-d/2-.01,solid.darkwood,false)}
+ architecturalKit.detailBarn(g,w,d);
  if(key)houseRefs[key]={group:g,kind:'barn',floor:V(0,2.55,1),forward:V(0,2.5,7)};
  selectable.push(g);return g;
 }
@@ -238,7 +246,11 @@ function makeGlassHall(x,z){
  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=-.05;scene.add(g);
  const w=29,d=19,h=10.8;
  box(g,w,.6,d,0,.3,0,solid.timberLight);
- box(g,w,6.0,d,0,3.3,0,solid.litGlass,false);
+ // Thin glazed envelope: the interiors should actually be visible.
+ box(g,w,6.0,.09,0,3.3,d/2,solid.windows,false);
+ box(g,w,6.0,.09,0,3.3,-d/2,solid.windows,false);
+ box(g,.09,6,d,-w/2,3.3,0,solid.windows,false);
+ box(g,.09,6,d,w/2,3.3,0,solid.windows,false);
  for(let xx=-w/2;xx<=w/2;xx+=3.6){box(g,.20,6.1,.24,xx,3.4,d/2,solid.trim);box(g,.18,6.1,.24,xx,3.4,-d/2,solid.trim)}
  for(let zz=-d/2;zz<=d/2;zz+=3.8){box(g,.24,6.2,.19,-w/2,3.4,zz,solid.trim);box(g,.24,6.2,.19,w/2,3.4,zz,solid.trim)}
  quad(g,[[-w/2,6.1,-d/2],[-w/2,6.1,d/2],[0,h,d/2],[0,h,-d/2]],solid.windows);
@@ -249,12 +261,17 @@ function makeGlassHall(x,z){
  for(let zz=-d/2;zz<=d/2;zz+=3.8){beam([-w/2,6.1,zz],[0,h,zz]);beam([0,h,zz],[w/2,6.1,zz])}
  box(g,w+7,.35,5,0,.40,d/2+2.8,solid.timberLight);
  for(let xx=-10;xx<=10;xx+=5){const t=cylinder(g,1.35,1.35,.15,xx,.95,1.5,solid.timberLight,16);cylinder(g,.2,.2,.64,xx,.62,1.5,solid.darkwood);for(let j=0;j<5;j++){const a=j/5*Math.PI*2;cylinder(g,.36,.35,.6,xx+2.4*Math.sin(a),.68,1.5+2.4*Math.cos(a),M(0x4b5741),7)}}
+ architecturalKit.detailGreenhouse(g,w,d,h);
  return g;
 }
 function makeRestaurant(x,z){
  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=.05;scene.add(g);
  const w=36,d=23;
- box(g,w,11,d,0,5.5,0,solid.timber);
+ // Architectural shell rather than a filled brown solid: visible double-height spaces.
+ box(g,.45,10.8,d,-w/2+.25,5.4,0,solid.timber);
+ box(g,.45,10.8,d,w/2-.25,5.4,0,solid.timber);
+ box(g,w,10.8,.45,0,5.4,-d/2+.25,solid.timber);
+ for(const yy of [3.4,7.9])box(g,w,.26,.13,0,yy+1.75,d/2-.1,solid.trim);
  box(g,w+4,.43,6.5,0,.38,d/2+3.5,solid.timberLight);
  for(const yy of [3.3,7.8]){box(g,w-.8,3.0,.2,0,yy,d/2+.12,solid.litGlass,false);box(g,.2,3,d-.8,-w/2-.13,yy,0,solid.litGlass,false);for(let xx=-w/2+2;xx<w/2;xx+=4.1)box(g,.22,3.25,.22,xx,yy,d/2+.3,solid.darkwood);box(g,w,.20,.3,0,yy-1.6,d/2+.23,solid.darkwood)}
  box(g,w+3,.7,d+2,0,11.1,0,solid.trim);
@@ -262,6 +279,7 @@ function makeRestaurant(x,z){
  quad(g,[[0,16.2,-d/2-1],[0,16.2,d/2+1],[w/2+1,11.2,d/2+1],[w/2+1,11.2,-d/2-1]],solid.roof);
  for(let xx=-15;xx<=15;xx+=4){box(g,.25,4.0,.2,xx,6.5,d/2+.15,solid.trim,false)}
  for(let xx=-16;xx<=16;xx+=4)cylinder(g,.1,.12,2.1,xx,1.3,d/2+6.5,solid.darkwood);
+ architecturalKit.detailRestaurant(g,w,d);
  return g;
 }
 function makeAdmin(x,z){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);box(g,23,6.3,12,0,3.15,0,solid.timber);box(g,24,1.1,13,0,6.6,0,solid.roof);box(g,21,3.7,.16,0,3.0,6.05,solid.litGlass,false);for(let xx=-10;xx<=10;xx+=3.6)box(g,.16,4.2,.2,xx,3,6.1,solid.trim);box(g,25,.4,3.7,0,.4,8.0,solid.timberLight);return g}
@@ -304,6 +322,8 @@ spruces.castShadow=window.innerWidth>820;spruces.receiveShadow=false;
 scene.add(trunks,spruces);
 scatterUnderstory(THREE,scene,rnd,isNearBuilding);
 scatterReeds(THREE,scene,rnd,shoreRadius);
+// Ground micro-details, individual shoreline stones, birch groves and resort lighting.
+architecturalKit.addLandscape({shoreRadius,isNearBuilding,positions:treePositions,quality:window.innerWidth>760?1:.4});
 // Natural scatter of boulders, meadow flowers and low-growing shrubs.
 for(let i=0;i<170;i++){const x=(rnd()-.5)*260,z=(rnd()-.5)*245;if((x/62)**2+(z/54)**2<1.08||isNearBuilding(x,z,7))continue;const size=.35+rnd()*.62;const stone=mesh(new THREE.IcosahedronGeometry(size,0),rnd()>.4?M(0x888d79):M(0x6d806b),scene,x,.17,z);stone.scale.y=.45;}
 // Two gentle circular water rings as subtle wave hints.
