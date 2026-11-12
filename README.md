@@ -61,3 +61,11 @@ python3 -m http.server 8000
 - https://unit-home.ru/aframe56
 - https://forestdew.ru/
 - https://yaroslavkiri4ykknifhit-max.github.io/hausbild/
+
+## Cinematic rendering pass (November 2026)
+
+- Added `realism.js` with procedural conifer foliage, understory vegetation and shoreline reeds (GPU-instanced), animated water with Fresnel-like reflections, a sky dome and soft reflection environment.
+- Added 7 self-contained seamless PBR-style textures in `assets/textures/` for forest floor, forest normal, gravel, sand, wood, slate roof and stones. These maps were generated specifically for this demo and do not require a third-party service.
+- Added roof-seam, trim, deck and exterior furnishing details to the cabins. Preserved the resort masterplan layout and all tour modes.
+- New `Кино / Быстро` switch trades rendering quality for frame rate, especially on mobile devices.
+- The geometry is still a **conceptual model**, not surveyed terrain or the exact manufacturer's CAD models. Photoreal architectural-grade deliverables would need licensed or supplied high-detail house models, botanical assets, surveyed terrain, verified measurements and a tested production render pipeline.

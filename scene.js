@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { installSurfaceMaterials, makeAtmosphere, makeLakeWater, makeSpruceGeometry, scatterUnderstory, scatterReeds } from './realism.js';
 
 // LAKE VILLAGE — conceptual, procedural 3D masterplan.
 // All coordinates are illustrative, derived from the spatial relationships
@@ -42,7 +43,8 @@ const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powe
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 820 ? 1.2 : 1.55));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.13;
+renderer.toneMappingExposure=1.25;
+installSurfaceMaterials(THREE, solid, renderer);
 renderer.shadowMap.enabled=window.innerWidth>820;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const controls = new OrbitControls(camera,canvas);
@@ -68,6 +70,7 @@ sun.shadow.camera.near=.5;sun.shadow.camera.far=500;
 sun.shadow.bias=-.00025;
 sun.shadow.normalBias=.028;
 scene.add(sun);
+const atmosphere = makeAtmosphere(THREE, scene, renderer);
 
 const stations=[
  {id:'entrance',name:'Въездная группа',short:'Въезд',tag:'01 / WELCOME',description:'Приватное пространство начинается с въезда: гостям открывается дорога через сосновый лес к берегу озера.',p:[39,2,132],cam:[60,13,156],target:[39,3,132]},
@@ -88,8 +91,8 @@ function mesh(geometry,material,parent=scene,x=0,y=0,z=0){const obj=new THREE.Me
 function box(parent,w,h,d,x,y,z,mat,shadow=true){const m=mesh(new THREE.BoxGeometry(w,h,d),mat,parent,x,y,z);m.castShadow=shadow;m.receiveShadow=shadow;return m}
 function cylinder(parent,r1,r2,h,x,y,z,mat,sides=9){const m=mesh(new THREE.CylinderGeometry(r1,r2,h,sides),mat,parent,x,y,z);m.castShadow=true;return m}
 function flatShape(points,material,y=.01,parent=scene){const shape=new THREE.Shape();shape.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)shape.lineTo(points[i][0],points[i][1]);shape.closePath();const obj=mesh(new THREE.ShapeGeometry(shape),material,parent,0,y,0);obj.rotation.x=-Math.PI/2;obj.receiveShadow=true;return obj}
-function quad(parent,coords,mat){const g=new THREE.BufferGeometry();const vs=[...coords[0],...coords[1],...coords[2],...coords[0],...coords[2],...coords[3]];g.setAttribute('position',new THREE.Float32BufferAttribute(vs,3));g.computeVertexNormals();const m=mesh(g,mat,parent);m.castShadow=true;m.receiveShadow=true;return m}
-function makeRibbon(pts,width,mat,closed=false){const curve=new THREE.CatmullRomCurve3(pts.map(p=>V(p[0],p[1]??.04,p[2])),closed,'centripetal');const N=Math.max(36,pts.length*10),v=[],norm=[];for(let i=0;i<=N;i++){const t=i/N,p=curve.getPoint(t),d=curve.getTangent(t),nx=-d.z,nz=d.x;v.push(p.x+nx*width/2,p.y,p.z+nz*width/2,p.x-nx*width/2,p.y,p.z-nz*width/2);norm.push(nx,nz)}const tris=[];for(let i=0;i<N;i++){const k=i*2;tris.push(k,k+2,k+1,k+1,k+2,k+3)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex(tris);g.computeVertexNormals();const m=mesh(g,mat);m.receiveShadow=true;return m}
+function quad(parent,coords,mat){const g=new THREE.BufferGeometry();const vs=[...coords[0],...coords[1],...coords[2],...coords[0],...coords[2],...coords[3]];g.setAttribute('position',new THREE.Float32BufferAttribute(vs,3));g.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,0,1,1,1,0,0,1,1,1,0],2));g.computeVertexNormals();const m=mesh(g,mat,parent);m.castShadow=true;m.receiveShadow=true;return m}
+function makeRibbon(pts,width,mat,closed=false){const curve=new THREE.CatmullRomCurve3(pts.map(p=>V(p[0],p[1]??.04,p[2])),closed,'centripetal');const N=Math.max(36,pts.length*10),v=[],uv=[];for(let i=0;i<=N;i++){const t=i/N,p=curve.getPoint(t),d=curve.getTangent(t),nx=-d.z,nz=d.x;v.push(p.x+nx*width/2,p.y,p.z+nz*width/2,p.x-nx*width/2,p.y,p.z-nz*width/2);uv.push(0,i/N*pts.length*3,1,i/N*pts.length*3)}const tris=[];for(let i=0;i<N;i++){const k=i*2;tris.push(k,k+2,k+1,k+1,k+2,k+3)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(tris);g.computeVertexNormals();const m=mesh(g,mat);m.receiveShadow=true;return m}
 function path(pts,width=2.35){return makeRibbon(pts.map(p=>[p[0],.105,p[1]]),width,solid.path)}
 function addBush(x,z,scale=1,mat=solid.forest2){const b=new THREE.Group();b.position.set(x,0,z);scene.add(b);for(let i=0;i<3;i++){const c=mesh(new THREE.DodecahedronGeometry((.8+rnd()*.7)*scale,0),mat,b,(rnd()-.5)*1.7*scale,1*scale+(rnd()-.5)*.2,(rnd()-.5)*1.6*scale);c.castShadow=false}}
 // Flat site, softly delineated paths and a gently irregular lake.
@@ -98,7 +101,7 @@ let waterObj;
 function shoreRadius(t){return 1 + .027*Math.sin(3*t+.4)+.024*Math.cos(5*t-1)+.011*Math.sin(11*t)}
 const shore=[];for(let i=0;i<=144;i++){const t=i/144*Math.PI*2,r=shoreRadius(t);shore.push([Math.sin(t)*59*r,Math.cos(t)*50*r])}
 flatShape(shore,M(0x84906a,{roughness:.98}),.015); // natural bank under water
-const waterMat=M(palette.water,{roughness:.18,metalness:.33,transparent:true,opacity:.96,side:THREE.DoubleSide});
+const {material:waterMat, uniforms:waterUniforms}=makeLakeWater(THREE);
 waterObj=flatShape(shore,waterMat,.085);
 const outer=[],inner=[];for(let i=0;i<144;i++){const a=i/144*Math.PI*2,r=shoreRadius(a);outer.push([Math.sin(a)*59*r*1.042,Math.cos(a)*50*r*1.042]);inner.push([Math.sin(a)*59*r*.984,Math.cos(a)*50*r*.984])}
 const shoreVs=[],shoreIx=[];for(let i=0;i<144;i++){shoreVs.push(outer[i][0],.042,outer[i][1],inner[i][0],.043,inner[i][1]);const k=2*i,kn=2*((i+1)%144);shoreIx.push(k,k+1,kn,k+1,kn+1,kn)}
@@ -134,6 +137,33 @@ for(let i=0;i<6;i++){const x=-20+i*8.1,z=69+Math.sin(i)*2.4;box(scene,2.7,.18,1.
 
 function orientToCenter(group,x,z){group.rotation.y=Math.atan2(-x,-z)}
 function makeDeck(group,w,d,z){box(group,w,.27,d,0,.45,z,solid.timberLight);for(let x=-w/2+.6;x<w/2;x+=1.5)box(group,.07,.02,d,x,.59,z,solid.darkwood,false);for(let i=0;i<3;i++)box(group,w*.62,.12,.5,0,.32-i*.12,z+d/2+i*.36,solid.timberLight,false)}
+function roofSeam(group,a,b,mat=solid.trim,thickness=.055){
+ const start=V(...a),end=V(...b),mid=start.clone().add(end).multiplyScalar(.5);
+ const bar=box(group,thickness,start.distanceTo(end),thickness,mid.x,mid.y,mid.z,mat,false);
+ bar.quaternion.setFromUnitVectors(V(0,1,0),end.sub(start).normalize());
+}
+function finishTerrace(group,width,frontZ){
+ // Slatted fascia, guard rail, terrace seating and subtle warm exterior lighting.
+ for(const side of [-1,1]){
+  for(const dz of [-1.45,1.2,3.85]){
+   const x=side*(width*.48);
+   box(group,.13,1.35,.13,x,1.16,frontZ+dz,solid.trim,false);
+  }
+  box(group,.09,.10,6.1,side*width*.48,1.82,frontZ+1.25,solid.trim,false);
+ }
+ for(const x of [-width*.37,width*.37]){
+   const lantern=box(group,.38,.60,.30,x,1.00,frontZ+1.4,solid.litTrim,false);
+   lantern.castShadow=false;
+ }
+ for(let i=0;i<10;i++){
+   const x=-width*.45+i*width*.1;
+   box(group,.05,.018,5.4,x,.61,frontZ+1.1,solid.darkwood,false);
+ }
+ for(const sx of [-1,1]){
+   box(group,1.1,.12,1.0,sx*2.75,.67,frontZ+2.9,solid.timberLight,false);
+   box(group,1.2,.66,.14,sx*2.75,1.00,frontZ+3.37,solid.timberLight,false);
+ }
+}
 function makeFurniture(group){
  box(group,3.5,.25,2.3,-1.6,.44,-1.4,solid.darkwood);
  box(group,3.2,.52,2,-1.6,.78,-1.4,M(0xd3c2a2));
@@ -146,6 +176,7 @@ function makeAframe(x,z,key){
  const g=new THREE.Group();g.position.set(x,0,z);orientToCenter(g,x,z);scene.add(g);
  const w=10.6,d=12.3,h=11.8,zFront=d/2;
  makeDeck(g,12.4,5.0,zFront+2.7);
+ finishTerrace(g,12.4,zFront+1.5);
  box(g,10.5,.6,12.3,0,.20,0,solid.darkwood);
  makeFurniture(g);
  const glassFace=quad(g,[[-w/2,.6,zFront],[w/2,.6,zFront],[0,h,zFront],[0,h,zFront]],solid.litGlass);glassFace.material.side=THREE.DoubleSide;
@@ -160,6 +191,10 @@ function makeAframe(x,z,key){
  function beam(a,b,thick=.45,mat=solid.timberLight){const mid=V(...a).add(V(...b)).multiplyScalar(.5);const len=V(...a).distanceTo(V(...b));const m=box(g,thick,len,thick,mid.x,mid.y,mid.z,mat);m.quaternion.setFromUnitVectors(V(0,1,0),V(...b).sub(V(...a)).normalize());return m}
  beam([-w/2,.25,zFront+.08],[0,h,zFront+.08]);beam([w/2,.25,zFront+.08],[0,h,zFront+.08]);
  beam([-w/2,.25,-zFront],[0,h,-zFront]);beam([w/2,.25,-zFront],[0,h,-zFront]);
+ for(let zz=-d/2+1.1;zz<d/2;zz+=1.85){
+  roofSeam(g,[-w/2-.02,.39,zz],[0,h+.09,zz]);
+  roofSeam(g,[w/2+.02,.39,zz],[0,h+.09,zz]);
+ }
  for(const xx of [-2.3,0,2.3])box(g,.14,4.7,.16,xx,3.0,zFront+.18,solid.trim);
  box(g,w-.65,.18,.16,0,4.3,zFront+.2,solid.trim);
  box(g,1.5,.1,.16,0,8.3,zFront+.25,solid.trim);
@@ -175,6 +210,7 @@ function makeBarn(x,z,key){
  const w=11.1,d=12,h=7.7;
  box(g,w,5.2,d,0,2.6,0,solid.timber);
  makeDeck(g,12.3,4.6,d/2+2.45);
+ finishTerrace(g,12.3,d/2+1.2);
  box(g,w,.32,d,0,.15,0,solid.darkwood);
  makeFurniture(g);
  // glazed wall facade. dark standing seams and glass.
@@ -185,6 +221,14 @@ function makeBarn(x,z,key){
  quad(g,[[-w/2-.5,5.5,-d/2-.4],[-w/2-.5,5.5,d/2+.4],[0,8.65,d/2+.4],[0,8.65,-d/2-.4]],solid.roof);
  quad(g,[[0,8.65,-d/2-.4],[0,8.65,d/2+.4],[w/2+.5,5.5,d/2+.4],[w/2+.5,5.5,-d/2-.4]],solid.roof);
  quad(g,[[-w/2,5.1,d/2],[0,8.4,d/2],[w/2,5.1,d/2],[0,5.1,d/2]],solid.litGlass);
+ for(let zz=-d/2+1.0;zz<d/2+.5;zz+=1.9){
+  roofSeam(g,[-w/2-.5,5.6,zz],[0,8.75,zz]);
+  roofSeam(g,[w/2+.5,5.6,zz],[0,8.75,zz]);
+ }
+ // Vertical cedar cladding and believable black window gaskets.
+ for(let xx=-w/2+.25;xx<w/2-.2;xx+=.72){
+  box(g,.055,4.75,.06,xx,2.63,-d/2-.055,solid.darkwood,false);
+ }
  box(g,.18,5.0,.2,-1.45,2.7,d/2+.26,solid.trim);
  for(let i=0;i<6;i++){box(g,.12,5.15,.10,-w/2+.5+i*1.7,2.7,-d/2-.01,solid.darkwood,false)}
  if(key)houseRefs[key]={group:g,kind:'barn',floor:V(0,2.55,1),forward:V(0,2.5,7)};
@@ -243,22 +287,23 @@ for(let attempts=0;attempts<3500&&treePositions.length<760;attempts++){
  treePositions.push([x,z,.67+rnd()*.8]);
 }
 const trunkGeo=new THREE.CylinderGeometry(.2,.34,2.6,5);
-const foliageGeo=new THREE.ConeGeometry(2.7,7.8,6);
-const topGeo=new THREE.ConeGeometry(2.1,6.5,6);
-const foliageColors=[0x214c33,0x173e2c,0x2e593a];
+const spruceGeo=makeSpruceGeometry(THREE);
+const spruceMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94,side:THREE.DoubleSide,flatShading:true});
 const trunks=new THREE.InstancedMesh(trunkGeo,solid.treeBark,treePositions.length);
-trunks.receiveShadow=false;trunks.castShadow=false;
-const pineBottom=foliageColors.map(c=>new THREE.InstancedMesh(foliageGeo,M(c,{flatShading:true}),treePositions.length));
-const pineTop=foliageColors.map(c=>new THREE.InstancedMesh(topGeo,M(c,{flatShading:true}),treePositions.length));
-const object=new THREE.Object3D(),counts=[0,0,0];
-treePositions.forEach(([x,z,s],idx)=>{
- object.position.set(x,1.3*s,z);object.scale.set(s,s,s);object.rotation.y=rnd()*6.283;object.updateMatrix();trunks.setMatrixAt(idx,object.matrix);
- const k=Math.floor(rnd()*3),index=counts[k]++;
- object.position.y=6.7*s;object.updateMatrix();pineBottom[k].setMatrixAt(index,object.matrix);
- object.position.y=9.5*s;object.updateMatrix();pineTop[k].setMatrixAt(index,object.matrix);
+const spruces=new THREE.InstancedMesh(spruceGeo,spruceMat,treePositions.length);
+const object=new THREE.Object3D();
+treePositions.forEach(([x,z,scale],idx)=>{
+ object.position.set(x,1.3*scale,z);object.scale.set(scale,scale,scale);object.rotation.set(0,rnd()*6.283,0);
+ object.updateMatrix();trunks.setMatrixAt(idx,object.matrix);
+ object.position.y=0;object.updateMatrix();spruces.setMatrixAt(idx,object.matrix);
+ const tint=new THREE.Color().setRGB(.75+rnd()*.37,.82+rnd()*.29,.76+rnd()*.24);
+ spruces.setColorAt(idx,tint);
 });
-scene.add(trunks);
-for(let i=0;i<3;i++){pineBottom[i].count=counts[i];pineTop[i].count=counts[i];scene.add(pineBottom[i],pineTop[i])}
+trunks.instanceMatrix.needsUpdate=true;spruces.instanceMatrix.needsUpdate=true;
+spruces.castShadow=window.innerWidth>820;spruces.receiveShadow=false;
+scene.add(trunks,spruces);
+scatterUnderstory(THREE,scene,rnd,isNearBuilding);
+scatterReeds(THREE,scene,rnd,shoreRadius);
 // Natural scatter of boulders, meadow flowers and low-growing shrubs.
 for(let i=0;i<170;i++){const x=(rnd()-.5)*260,z=(rnd()-.5)*245;if((x/62)**2+(z/54)**2<1.08||isNearBuilding(x,z,7))continue;const size=.35+rnd()*.62;const stone=mesh(new THREE.IcosahedronGeometry(size,0),rnd()>.4?M(0x888d79):M(0x6d806b),scene,x,.17,z);stone.scale.y=.45;}
 // Two gentle circular water rings as subtle wave hints.
@@ -345,13 +390,26 @@ el('reset-view').addEventListener('click',resetView);
 el('orbit-mode').addEventListener('click',()=>setMode('orbit'));
 el('walk-mode').addEventListener('click',()=>setMode('walk'));
 el('plan-mode').addEventListener('click',()=>setMode('plan'));
+let cinemaQuality=window.innerWidth>820;
+const qualityButton=el('quality-toggle');
+function applyQuality(){
+ renderer.shadowMap.enabled=cinemaQuality && window.innerWidth>700;
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,cinemaQuality?1.65:1.0));
+ qualityButton.innerHTML=cinemaQuality?'✦ <span>Кино</span>':'⚡ <span>Быстро</span>';
+ qualityButton.setAttribute('aria-pressed',String(cinemaQuality));
+ resize();
+}
+qualityButton.addEventListener('click',()=>{cinemaQuality=!cinemaQuality;applyQuality();});
+applyQuality();
 el('light-toggle').addEventListener('click',()=>{
  night=!night;
  sun.intensity=night?.25:2.65;ambient.intensity=night?.82:1.8;
  sun.color.setHex(night?0xb3c6d4:0xffe1a8);
  scene.background=new THREE.Color(night?0x0a1923:0x96aba4);
  scene.fog.color.setHex(night?0x0a1923:0x96aba4);
- renderer.toneMappingExposure=night?.88:1.13;
+ renderer.toneMappingExposure=night?.98:1.25;
+ atmosphere.uniforms.uNight.value=night?1:0;
+ waterUniforms.night.value=night?1:0;
  solid.litGlass.emissiveIntensity=night?1.15:.38;
  solid.litTrim.emissiveIntensity=night?2.4:.45;
  el('light-toggle').innerHTML=night?'☀ <span>День</span>':'☾ <span>Вечер</span>';
@@ -399,6 +457,7 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(.05,clock.ge
    else resetView();
  }
  const t=performance.now()*.0004;
+ waterUniforms.time.value=performance.now()*.001;
  for(let i=0;i<ripples.length;i++)ripples[i].material.opacity=.10+.09*Math.sin(t+i*2.2);
  renderer.render(scene,camera);
  updatePins();
