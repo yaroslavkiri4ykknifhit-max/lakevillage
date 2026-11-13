@@ -1,35 +1,64 @@
-(function(){
- const header=document.querySelector('#header');
- function onScroll(){header.classList.toggle('scrolled',window.scrollY>50)}
- onScroll();window.addEventListener('scroll',onScroll,{passive:true});
- const menu=document.querySelector('#menu-toggle'),nav=document.querySelector('#mobile-nav');
- menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));menu.textContent=open?'×':'☰'});
- nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu.textContent='☰';menu.setAttribute('aria-expanded','false')}));
- const dialog=document.querySelector('#plan-dialog');
- document.querySelector('#open-plan').addEventListener('click',()=>dialog.showModal());
- document.querySelector('#close-plan').addEventListener('click',()=>dialog.close());
- dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
- let sceneLoad;
- const loadScene=()=>sceneLoad??=import('./scene.js').catch(error=>{
-   if(error.message!=='WebGL 2 unavailable')console.warn('Lake Village 3D initialization failed',error);
-   const poster=document.querySelector('#tour-poster');
-   poster.querySelector('span:not(.poster-icon)').textContent='3D-ПРОГУЛКА НЕДОСТУПНА';
-   poster.querySelector('small').textContent='Генеральный план можно открыть кнопкой ниже.';
-   const shell=document.querySelector('#tour-shell');
-   shell.dataset.architecture='no-webgl';
-   shell.querySelectorAll('button:not(#plan-mode)').forEach(button=>{button.disabled=true;});
-   shell.querySelector('#plan-mode').addEventListener('click',()=>dialog.showModal());
- });
- const explore=document.querySelector('#explore');
- const observer=new IntersectionObserver(([entry])=>{
-   if(entry.isIntersecting){observer.disconnect();void loadScene();}
- },{rootMargin:'450px'});
- observer.observe(explore);
- document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',async()=>{
-   document.querySelector('#explore').scrollIntoView({behavior:'smooth'});
-   const id=b.dataset.go;
-   await loadScene();
-   if(window.LakeVillageTour)window.LakeVillageTour.focus(id);
-   else if(!dialog.open)dialog.showModal();
- }));
-})();
+const header=document.querySelector('#header');
+function updateHeader() {
+  header.classList.toggle('scrolled',window.scrollY>50);
+}
+updateHeader();
+window.addEventListener('scroll',updateHeader,{passive:true});
+
+const menu=document.querySelector('#menu-toggle');
+const nav=document.querySelector('#mobile-nav');
+function setMenu(open) {
+  nav.classList.toggle('open',open);
+  menu.setAttribute('aria-expanded',String(open));
+  menu.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
+  menu.textContent=open?'×':'☰';
+}
+menu.addEventListener('click',()=>setMenu(!nav.classList.contains('open')));
+nav.addEventListener('click',event=>{if(event.target.closest('a'))setMenu(false);});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&nav.classList.contains('open')){
+    setMenu(false);
+    menu.focus();
+  }
+});
+
+const dialog=document.querySelector('#plan-dialog');
+document.querySelector('#open-plan').addEventListener('click',()=>dialog.showModal());
+document.querySelector('#close-plan').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+
+const shell=document.querySelector('#tour-shell');
+const canvas=document.querySelector('#lake-canvas');
+const poster=document.querySelector('#tour-poster');
+const launch=document.querySelector('#launch-tour');
+const status=document.querySelector('#tour-status');
+let sceneLoad;
+
+function showFallback(state,message) {
+  shell.dataset.architecture=state;
+  status.textContent=message;
+  poster.classList.remove('is-ready');
+  poster.inert=false;
+  launch.hidden=true;
+}
+function loadScene() {
+  if(sceneLoad)return sceneLoad;
+  shell.dataset.architecture='loading';
+  status.textContent='Загружаем 3D-тур…';
+  launch.disabled=true;
+  sceneLoad=import('./scene.js?v=investor1').catch(error=>{
+    const unsupported=error.message==='WebGL 2 unavailable';
+    if(!unsupported)console.warn('Lake Village 3D initialization failed',error);
+    showFallback(unsupported?'no-webgl':'error','3D-тур недоступен на этом устройстве');
+  });
+  return sceneLoad;
+}
+launch.disabled=false;
+launch.addEventListener('click',loadScene);
+canvas.addEventListener('webglcontextlost',()=>showFallback('error','3D-тур прерван. Обновите страницу для повторного запуска.'));
+
+document.querySelectorAll('[data-go]').forEach(link=>link.addEventListener('click',async event=>{
+  if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  await loadScene();
+  if(shell.dataset.architecture!=='error')window.LakeVillageTour?.focus(link.dataset.go);
+}));

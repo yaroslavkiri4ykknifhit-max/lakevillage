@@ -26,7 +26,7 @@ export function groundHeight(x,z) {
 }
 
 export function makeTerrain(material, sand) {
-  const geo = new THREE.PlaneGeometry(540,540,300,300).rotateX(-Math.PI/2);
+  const geo = new THREE.PlaneGeometry(540,540,180,180).rotateX(-Math.PI/2);
   const positions = geo.attributes.position;
   const colors = [];
   const color = new THREE.Color();
@@ -119,7 +119,7 @@ export const demoModels = {
 export async function loadDemoCabin(kind, anisotropy) {
   const definition=demoModels[kind];
   const {scene}=await model(definition.name);
-  const glass=[], lamps=[];
+  const lamps=[];
   scene.traverse(node => {
     if (!node.isMesh) return;
     const {material}=node;
@@ -129,11 +129,12 @@ export async function loadDemoCabin(kind, anisotropy) {
       if (map) map.anisotropy=anisotropy;
     }
     if (material.name==='Glass') {
-      material.thickness=.018;
-      material.attenuationColor.setHex(0xb0d4cd);
-      material.attenuationDistance=1.2;
+      material.transmission=0;
+      material.opacity=.22;
+      material.transparent=true;
+      material.depthWrite=false;
       material.envMapIntensity=.82;
-      glass.push(material);
+      material.needsUpdate=true;
     }
     if (material.name==='Lamp') lamps.push(material);
   });
@@ -152,15 +153,7 @@ export async function loadDemoCabin(kind, anisotropy) {
       lights.forEach((lamp,i)=>{lamp.intensity=(night?[28,30,18]:[4,6,3])[i];});
       lamps.forEach(lamp=>{lamp.emissiveIntensity=night?3.0:.45;});
     },
-    quality(high) {
-      glass.forEach(material=>{
-        material.transmission=high?1:0;
-        material.opacity=high?1:.17;
-        material.transparent=!high;
-        material.depthWrite=high;
-        material.needsUpdate=true;
-      });
-    },
+
   };
 }
 
@@ -198,7 +191,7 @@ export async function loadBotanicals(scene, treePositions, demoSites, rng, nearP
   const distance = (x,z) => Math.min(...demoSites.map(p=>Math.hypot(x-p.x,z-p.z)));
   const candidate=treePositions.map((p,index)=>[...p,index])
     .filter(([x,z])=>close(x,z,31) && !nearPath(x,z,2.8))
-    .sort((a,b)=>distance(a[0],a[1])-distance(b[0],b[1])).slice(0,32);
+    .sort((a,b)=>distance(a[0],a[1])-distance(b[0],b[1])).slice(0,18);
   const near=new THREE.Group();
   const stream=()=>{
     let seed=Math.floor(rng()*4294967296);
@@ -220,7 +213,7 @@ export async function loadBotanicals(scene, treePositions, demoSites, rng, nearP
       const {scene:fern}=await model('fern');
       const points=[];
       for (const site of demoSites) {
-        for (let i=0;i<160;i++) {
+        for (let i=0;i<90;i++) {
           const x=site.x+(fernRandom()-.5)*59,z=site.z+(fernRandom()-.5)*57;
           if (Math.hypot(x-site.x,z-site.z)<9 || nearPath(x,z,1.8) || shorelineDistance(x,z)<.6) continue;
           points.push([x,z,.65+fernRandom()*1.15,fernRandom()*Math.PI*2]);
@@ -232,7 +225,7 @@ export async function loadBotanicals(scene, treePositions, demoSites, rng, nearP
       const {scene:rocks}=await model('moss-rocks');
       const variants=getParts(rocks);
       const points=variants.map(()=>[]);
-      for (let i=0;i<78;i++) {
+      for (let i=0;i<54;i++) {
         const side=i%2?1:-1, z=(rockRandom()-.5)*62;
         const angle=side*Math.acos(z/50), r=shoreRadius(angle)*(1.013+rockRandom()*.047);
         const x=Math.sin(angle)*59*r;

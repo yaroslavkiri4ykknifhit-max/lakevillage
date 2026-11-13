@@ -1,5 +1,3 @@
-import { Reflector } from 'three/addons/objects/Reflector.js';
-
 export function installSurfaceMaterials(THREE, solid, renderer) {
   const loader = new THREE.TextureLoader();
   const cache = new Map();
@@ -9,7 +7,7 @@ export function installSurfaceMaterials(THREE, solid, renderer) {
       const map = loader.load(new URL(`./assets/textures/${file}.webp`,import.meta.url).href);
       map.wrapS=map.wrapT=THREE.RepeatWrapping;
       map.repeat.set(x,y);
-      map.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+      map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
       map.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;
       cache.set(key,map);
     }
@@ -40,23 +38,17 @@ export function makeLakeWater(THREE,geometry,level) {
   const shader = {
     name:'LakeVillageWater',
     uniforms:{
-      color:{value:null}, tDiffuse:{value:null}, textureMatrix:{value:null},
-      time:{value:0}, night:{value:0}, reflectScene:{value:0}, sunDirection:{value:new THREE.Vector3(-.5,.6,.5)},
+      time:{value:0}, night:{value:0}, sunDirection:{value:new THREE.Vector3(-.5,.6,.5)},
     },
     vertexShader:`
-      uniform mat4 textureMatrix;
-      varying vec4 reflectionUV;
       varying vec3 world;
       void main(){
-        reflectionUV=textureMatrix*vec4(position,1.);
         world=(modelMatrix*vec4(position,1.)).xyz;
         gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);
       }`,
     fragmentShader:`
-      uniform sampler2D tDiffuse;
-      uniform float time,night,reflectScene;
+      uniform float time,night;
       uniform vec3 sunDirection;
-      varying vec4 reflectionUV;
       varying vec3 world;
       void main(){
         vec2 p=world.xz;
@@ -76,26 +68,18 @@ export function makeLakeWater(THREE,geometry,level) {
         vec3 deep=vec3(.011,.066,.073);
         vec3 volume=mix(shallow,deep,1.-exp(-max(depth,0.)*.29));
         vec3 sky=mix(vec3(.34,.46,.50),vec3(.12,.18,.27),night);
-        vec2 uv=clamp(reflectionUV.xy/reflectionUV.w+slope*.096,vec2(.003),vec2(.997));
-        vec3 reflection=mix(sky,texture2D(tDiffuse,uv).rgb,reflectScene);
         float glint=pow(max(dot(reflect(-sunDirection,n),eye),0.),320.);
         volume*=mix(1.,.27,night);
         vec3 light=mix(vec3(1.,.85,.62),vec3(1.,.42,.19),night);
-        gl_FragColor=vec4(mix(volume,reflection,fresnel)+light*glint*mix(.42,.16,night),1.);
+        gl_FragColor=vec4(mix(volume,sky,fresnel)+light*glint*mix(.42,.16,night),1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
   };
-  const water = new Reflector(geometry,{shader,textureWidth:512,textureHeight:320,
-    clipBias:.002,multisample:0});
+  const water=new THREE.Mesh(geometry,new THREE.ShaderMaterial(shader));
   water.rotation.x=-Math.PI/2;
   water.position.y=level;
-  const uniforms=water.material.uniforms;
-  const reflect=water.onBeforeRender;
-  water.onBeforeRender=function(...args) {
-    if (uniforms.reflectScene.value && args[0].getRenderTarget()===null) reflect.apply(this,args);
-  };
-  return {water,uniforms};
+  return {water,uniforms:water.material.uniforms};
 }
 
 // Instanced organic evergreen: irregular needle sprays instead of two plastic cones.
@@ -108,11 +92,11 @@ export function makeSpruceGeometry(THREE) {
   function tri(a,b,c,tone){
     for(const p of [a,b,c]){vertices.push(...p);colors.push(...tone);}
   }
-  for(let tier=0;tier<13;tier++){
-    const t=tier/12;
+  for(let tier=0;tier<9;tier++){
+    const t=tier/8;
     const y=1.8+t*9.2;
     const radius=3.6*Math.pow(1.-t,.94)+.08;
-    const count=8+(tier%3);
+    const count=6+(tier%3);
     for(let i=0;i<count;i++){
       const a=i/count*Math.PI*2+(tier%2)*.25+(rand()-.5)*.17;
       const cs=Math.cos(a),sn=Math.sin(a),tanx=-sn,tanz=cs;
@@ -142,7 +126,7 @@ export function makeSpruceGeometry(THREE) {
 }
 
 export function scatterUnderstory(THREE, scene, rng, avoidBuilding, groundHeight) {
-  const n=window.innerWidth<760?1500:4300;
+  const n=window.innerWidth<760?1050:2200;
   const vertices=[-.16,0,0, .15,0,0, 0,.7,0,
                   0,0,-.16,0,0,.15,0,.64,0,
                   -.11,0,-.13,.14,0,.13,0,.56,-.01];
@@ -166,7 +150,7 @@ export function scatterUnderstory(THREE, scene, rng, avoidBuilding, groundHeight
 }
 
 export function scatterReeds(THREE,scene,rng,shoreRadius,groundHeight){
-  const count=window.innerWidth<760?220:550;
+  const count=window.innerWidth<760?180:320;
   const g=new THREE.CylinderGeometry(.017,.055,1.45,3);
   const m=new THREE.MeshStandardMaterial({color:0x728456,roughness:1,side:THREE.DoubleSide});
   const reeds=new THREE.InstancedMesh(g,m,count);const o=new THREE.Object3D();

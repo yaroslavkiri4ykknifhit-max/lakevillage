@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { installSurfaceMaterials, makeLakeWater, makeSpruceGeometry, scatterUnderstory, scatterReeds } from './realism.js';
+import { installSurfaceMaterials, makeLakeWater, makeSpruceGeometry, scatterUnderstory, scatterReeds } from './realism.js?v=investor1';
 import { createArchitecturalKit } from './architecture.js';
 import { demoModels, groundHeight, lakeLevel, loadBotanicals, loadDemoCabin,
-  makeTerrain, positionWalk, setupSky, shoreRadius } from './archviz.js';
+  makeTerrain, positionWalk, setupSky, shoreRadius } from './archviz.js?v=investor1';
 
 // LAKE VILLAGE — conceptual, procedural 3D masterplan.
 // All coordinates are illustrative, derived from the spatial relationships
@@ -42,16 +42,13 @@ scene.fog = new THREE.FogExp2(0x96aba4,.0027);
 const camera = new THREE.PerspectiveCamera(47, 1, .12, 650);
 camera.position.set(146,139,151);
 const originalCamera = V(146,139,151), originalTarget=V(0,2,0);
-const context=canvas.getContext('webgl2',{antialias:true,alpha:false,powerPreference:'high-performance'});
+const context=canvas.getContext('webgl2',{antialias:false,alpha:false});
 if(!context)throw new Error('WebGL 2 unavailable');
 const renderer = new THREE.WebGLRenderer({canvas,context});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 820 ? 1.2 : 1.55));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.12;
 installSurfaceMaterials(THREE, solid, renderer);
-renderer.shadowMap.enabled=window.innerWidth>820;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const controls = new OrbitControls(camera,canvas);
 controls.enableDamping = true;
 controls.dampingFactor=.065;
@@ -67,13 +64,6 @@ const ambient = new THREE.HemisphereLight(0xe1edff,0x655441,.62);
 scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xffe1b9,2.45);
 sun.position.set(-120,185,100);
-sun.castShadow=true;
-sun.shadow.mapSize.set(window.innerWidth>820?2048:1024,window.innerWidth>820?2048:1024);
-sun.shadow.camera.left=-160;sun.shadow.camera.right=160;
-sun.shadow.camera.top=155;sun.shadow.camera.bottom=-155;
-sun.shadow.camera.near=.5;sun.shadow.camera.far=500;
-sun.shadow.bias=-.00025;
-sun.shadow.normalBias=.035;
 scene.add(sun,sun.target);
 const setSky=setupSky(scene,renderer,sun);
 
@@ -317,7 +307,7 @@ makeGlassHall(-41,-104);makeRestaurant(45,-105);
 // Path connections, trees and coastal shrubbery.
 function isNearBuilding(x,z,buffer=10){const spots=[[-41,-104,27],[45,-105,29],[-13,104,17],[39,134,15],[68,108,30],[-94,120,20],[-62,83,20]];for(let i=0;i<7;i++){const zz=-62+i*20.6;spots.push([-91-16*Math.sin((i+.4)/7*Math.PI),zz,buffer]);const z2=-61+i*20.8;spots.push([91+17*Math.sin((i+.45)/7*Math.PI),z2,buffer])}return spots.some(p=>(x-p[0])**2+(z-p[1])**2<p[2]*p[2]);}
 const treePositions=[];
-for(let attempts=0;attempts<3500&&treePositions.length<760;attempts++){
+for(let attempts=0;attempts<3500&&treePositions.length<580;attempts++){
  const x=(rnd()-.5)*340,z=(rnd()-.5)*298;
  const ell=(x/68)**2+(z/57)**2;
  if(ell<1 ||isNearBuilding(x,z,12) || nearPath(x,z,2.7))continue;
@@ -340,12 +330,11 @@ treePositions.forEach(([x,z,scale],idx)=>{
  spruces.setColorAt(idx,tint);
 });
 trunks.instanceMatrix.needsUpdate=true;spruces.instanceMatrix.needsUpdate=true;
-spruces.castShadow=window.innerWidth>820;spruces.receiveShadow=false;
 scene.add(trunks,spruces);
 scatterUnderstory(THREE,scene,rnd,(x,z,b)=>isNearBuilding(x,z,b)||nearPath(x,z,1.4),groundHeight);
 scatterReeds(THREE,scene,rnd,shoreRadius,groundHeight);
 // Ground micro-details, individual shoreline stones, birch groves and resort lighting.
-architecturalKit.addLandscape({shoreRadius,isNearBuilding,positions:treePositions,quality:window.innerWidth>760?1:.4});
+architecturalKit.addLandscape({shoreRadius,isNearBuilding,positions:treePositions,quality:.4});
 // Give asynchronously loaded landscape assets an independent, deterministic random stream.
 let botanicalSeed=90731;
 const botanicalRandom=()=>((botanicalSeed=(botanicalSeed*1664525+1013904223)>>>0)/4294967296);
@@ -398,8 +387,8 @@ stations.forEach((s,i)=>{
  const pin=document.createElement('button');pin.type='button';pin.className='tour-pin';pin.textContent=String(i+1);pin.title=s.name;pin.setAttribute('aria-label',s.name);pin.addEventListener('click',()=>focus(s.id));markerWrap.append(pin);markers.push({s,el:pin});
 });
 function setLocation(s){
- el('location-index').textContent=s?s.tag:'ОБЗОР / 00';
- el('location-title').textContent=s?s.name:'Весь мир вокруг озера';
+ el('location-index').textContent=s?s.tag.split(' / ')[0]:'ТЕРРИТОРИЯ';
+ el('location-title').textContent=s?s.name:'Общий вид';
  el('location-description').textContent=s?s.description:'Вращайте камеру, приближайтесь к домам или выберите интересующее пространство из списка.';
  el('enter-house').hidden=!(s&&s.house);
  el('enter-house').textContent='Зайти внутрь ↗';
@@ -473,20 +462,6 @@ el('reset-view').addEventListener('click',resetView);
 el('orbit-mode').addEventListener('click',()=>setMode('orbit'));
 el('walk-mode').addEventListener('click',()=>setMode('walk'));
 el('plan-mode').addEventListener('click',()=>setMode('plan'));
-let cinemaQuality=window.innerWidth>820 && (navigator.hardwareConcurrency??6)>4
-  && (navigator.deviceMemory??8)>4 && !reducedMotion.matches;
-const qualityButton=el('quality-toggle');
-function applyQuality(){
- renderer.shadowMap.enabled=cinemaQuality;
- waterUniforms.reflectScene.value=cinemaQuality?1:0;
- Object.values(houseRefs).forEach(h=>h.detailed?.quality(cinemaQuality));
- renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,cinemaQuality?1.65:1.0));
- qualityButton.innerHTML=cinemaQuality?'✦ <span>Кино</span>':'⚡ <span>Быстро</span>';
- qualityButton.setAttribute('aria-pressed',String(cinemaQuality));
- resize();
-}
-qualityButton.addEventListener('click',()=>{cinemaQuality=!cinemaQuality;applyQuality();});
-applyQuality();
 async function applyLight(){
  const currentNight=night;
  sun.intensity=night?.65:2.45;
@@ -512,11 +487,10 @@ el('light-toggle').addEventListener('click',()=>{
 });
 const cabinReady=Promise.all(Object.entries(houseRefs).map(async ([kind,h])=>{
  try{
-   const detailed=await loadDemoCabin(kind,Math.min(8,renderer.capabilities.getMaxAnisotropy()));
+   const detailed=await loadDemoCabin(kind,Math.min(4,renderer.capabilities.getMaxAnisotropy()));
    for(const legacy of [...h.group.children]) h.group.remove(legacy);
    h.group.add(detailed.scene);
    h.detailed=detailed;
-   detailed.quality(cinemaQuality);
    detailed.light(night);
    if(inside&&current===kind){
      const def=demoModels[kind];
@@ -560,8 +534,27 @@ function updatePins(){if(mode==='plan')return;const w=stage.clientWidth,h=stage.
  for(const p of markers){const point=V(...p.s.p);point.y+=2;point.project(camera);const visible=!inside&&point.z>-1 && point.z<1 && Math.abs(point.x)<.92 && Math.abs(point.y)<.92;
  p.el.style.display=visible?'flex':'none';p.el.style.left=((point.x*.5+.5)*w)+'px';p.el.style.top=((-point.y*.5+.5)*h)+'px';}
 }
-function animate(){requestAnimationFrame(animate);const dt=Math.min(.05,clock.getDelta());
- if(!isVisible||document.hidden||mode==='plan')return;
+const compactScreen=matchMedia('(max-width: 800px)').matches;
+const resolutionSteps=compactScreen?[.86,.72,.6]:[1,.83,.68];
+let resolutionStep=0;
+let lastFrame=null, slowFrames=0, firstFrame=true;
+function animate(now){
+ if(stage.dataset.architecture==='error')return;
+ requestAnimationFrame(animate);
+ if(!isVisible||document.hidden||mode==='plan'){
+   lastFrame=null;slowFrames=0;clock.getDelta();return;
+ }
+ const frameTime=lastFrame===null?0:now-lastFrame;
+ if(compactScreen&&frameTime>0&&frameTime<29)return;
+ lastFrame=now;
+ const dt=Math.min(.075,clock.getDelta());
+ // Several seconds of slow frames lower the render resolution once. Camera and layout stay fixed.
+ if(!firstFrame){
+   slowFrames=frameTime>47&&frameTime<500?slowFrames+1:Math.max(0,slowFrames-1);
+   if(slowFrames>=28&&resolutionStep<resolutionSteps.length-1){
+     resolutionStep++;slowFrames=0;resize();
+   }
+ }
  if(mode==='walk'){
   const f=(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)-(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0);
   const side=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0);
@@ -583,26 +576,33 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(.05,clock.ge
    else resetView();
  }
  updateForestLOD();
- if(cinemaQuality){
-   const radius=mode==='walk'||(current!=='overview'&&camera.position.distanceTo(controls.target)<52)?37:164;
-   const x=radius<40?camera.position.x:0,z=radius<40?camera.position.z:0;
-   sun.target.position.set(x,0,z);
-   sun.position.copy(waterUniforms.sunDirection.value).multiplyScalar(185).add(sun.target.position);
-   if(sun.shadow.camera.right!==radius){
-     Object.assign(sun.shadow.camera,{left:-radius,right:radius,top:radius,bottom:-radius});
-     sun.shadow.camera.updateProjectionMatrix();
-   }
- }
  waterUniforms.time.value=reducedMotion.matches?0:performance.now()*.001;
  renderer.render(scene,camera);
+ if(firstFrame){
+   firstFrame=false;
+   stage.dataset.architecture='active';
+   poster.classList.add('is-ready');
+   if(poster.contains(document.activeElement)){
+     el('orbit-mode').focus({preventScroll:true});
+   }
+   poster.inert=true;
+ }
  updatePins();
 }
-function resize(){const width=stage.clientWidth,height=stage.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix()}
+function resize(){
+ const width=stage.clientWidth,height=stage.clientHeight;
+ if(!width||!height)return;
+ const pixelRatio=Math.min(window.devicePixelRatio||1,resolutionSteps[resolutionStep],
+   Math.sqrt(1100000/(width*height)));
+ renderer.setPixelRatio(pixelRatio);
+ renderer.setSize(width,height,false);
+ camera.aspect=width/height;camera.updateProjectionMatrix();
+}
 new ResizeObserver(resize).observe(stage);resize();
 setLocation(null);
-poster.classList.add('is-ready');window.LakeVillageTour={focus,resetView,setMode};
+window.LakeVillageTour={focus,resetView,setMode};
 window.lakeSceneReady=true;
 Promise.all([cabinReady,botanicalReady,lightingReady]).then(([cabins,landscape,lighting])=>{
- stage.dataset.architecture=cabins.every(Boolean)&&landscape&&lighting?'ready':'fallback';
+ stage.dataset.assets=cabins.every(Boolean)&&landscape&&lighting?'ready':'partial';
 });
-animate();
+requestAnimationFrame(animate);

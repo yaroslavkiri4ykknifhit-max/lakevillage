@@ -4,3 +4,65 @@
 @media(max-width:800px){.layout{width:calc(100% - 38px)}.site-header{height:69px;padding:0 19px}.brand-word{font-size:22px}.desktop-nav,.header-cta{display:none}.menu-toggle{display:block;border:0;background:transparent;font-size:28px;color:#f3e7d2}.mobile-nav{position:fixed;inset:69px 0 auto;z-index:35;background:#0b2019;padding:16px 20px 24px;box-shadow:0 15px 45px #04130ebe;flex-direction:column;gap:18px;font-size:15px}.mobile-nav.open{display:flex}.hero{min-height:730px;height:94svh;align-items:end}.hero-photo{background-position:57% center}.hero-vignette{background:linear-gradient(0deg,rgba(3,19,13,.98),rgba(5,20,13,.64) 55%,rgba(7,24,17,.15) 100%)}.hero-content{padding:0 0 145px}.hero-eyebrow{font-size:9px}.hero h1{font-size:clamp(61px,12.1vw,86px);line-height:.94;margin:25px 0}.hero-content>p{font-size:12px;max-width:370px}.hero-actions{align-items:stretch;flex-direction:column;max-width:330px;gap:21px}.btn{min-height:55px}.hero-bottom{bottom:23px}.vertical-label{display:none}.scroll-prompt{font-size:8px}.section-pad{padding:83px 0}.concept-grid,.contact-inner{grid-template-columns:1fr;gap:24px}.concept h2,.places h2,.masterplan h2,.contact h2{font-size:clamp(56px,11vw,80px)}.concept-copy{padding-top:0}.concept-copy .lead{font-size:25px}.stat-strip{margin-top:45px;grid-template-columns:repeat(2,1fr);gap:20px}.stat-strip>div{padding:10px 0 10px 10px;border-right:0}.stat-number{font-size:56px}.stat-label{font-size:8px}.explore{padding-top:75px}.explore-heading-row{display:block}.explore-heading-row h2{font-size:59px}.explore-heading-row p{margin-top:20px;font-size:12px}.tour-shell{height:740px;min-height:740px}.tour-shade{background:linear-gradient(0deg,rgba(4,19,14,.94),transparent 35%,transparent 60%,rgba(4,19,14,.68))}.tour-topbar{top:19px;left:17px;right:17px}.tour-live{font-size:8px}.tour-top-buttons{gap:5px}.tour-top-buttons button{font-size:15px;padding:8px 10px}.tour-top-buttons button span{display:none}.tour-sidebar{top:auto;left:17px;right:17px;bottom:92px;width:auto;height:133px;display:block}.tour-sidebar-overline,.tour-sidebar h3{display:none}.tour-places{overflow-x:auto;overflow-y:hidden;flex-direction:row;margin-top:0;padding-bottom:7px;scrollbar-width:none;gap:5px}.tour-place{flex:none;width:max-content;border:1px solid #c5b7984d;background:#092119c9;padding:11px 12px}.tour-place .no{font-size:13px;width:auto}.tour-place .name{font-size:10px}.tour-location{right:17px;left:17px;top:66px;bottom:auto;width:auto;text-align:left}.tour-location h3{font-size:31px;margin-top:8px}.tour-location p{font-size:10px;max-width:320px;margin-top:6px}.location-actions{justify-content:flex-start;margin-top:10px}.outline-dark{padding:9px 10px}.tour-bottom{bottom:27px;left:17px;right:17px}.tour-mode{width:100%;justify-content:space-between}.mode-button{flex:1;padding:12px 7px}.tour-corner{display:none}.tour-markers{opacity:.85}.tour-mobile-advice{display:block;left:17px;right:17px;bottom:254px;color:#f6f2e9;font-size:9px;text-align:center;text-shadow:0 1px 5px #071a15}.model-notice{padding-bottom:17px}.places-title,.masterplan-head{display:block}.places-title>p,.masterplan-head>p{margin-top:25px}.place-cards{grid-template-columns:1fr;gap:18px}.place-card{min-height:490px}.place-card-content{bottom:25px;left:24px;right:24px}.place-card-content h3{font-size:46px}.plan-legend{grid-template-columns:1fr;gap:20px}.plan-legend>div{border:0;padding:0}.image-zoom{bottom:8px;right:8px;padding:10px;font-size:8px}.investment{min-height:675px;padding:75px 0}.investment-backdrop{background-position:65% center;background-image:linear-gradient(90deg,#061b15ed,#061b15af),url('assets/slide-9.webp')}.investment-content h2{font-size:clamp(58px,11vw,88px)}.investment-metrics{gap:27px;flex-wrap:wrap}.investment-metrics strong{font-size:34px}.investment-metrics span{font-size:8px}.contact-side{padding-top:5px}.contact-phone{font-size:31px}footer .footer-inner{flex-wrap:wrap;min-height:165px;padding:25px 0;gap:13px}.footer-copy{display:none}}
 @media(max-width:420px){.hero h1{font-size:59px}.tour-live{letter-spacing:.07em;font-size:7px}.tour-top-buttons button{font-size:13px}.tour-location h3{font-size:27px}.tour-location p{font-size:9px}.tour-mobile-advice{bottom:247px}.tour-shell{height:720px;min-height:720px}.investment-metrics{gap:19px}.investment-metrics strong{font-size:30px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+/* Investor presentation */
+.hero { height: min(850px, 91svh); min-height: 640px; }
+.hero-photo { animation: none; transform: scale(1.19); transform-origin: left 50%; background-position: center 48%; }
+.hero-vignette { background: linear-gradient(90deg, #071a16f5 0%, #071a16bf 35%, #071a1645 66%, #071a1615 100%), linear-gradient(0deg, #071a16b0, transparent 35%); }
+.hero-content { padding-top: 60px; }
+.hero-content .hero-eyebrow { margin: 0 0 20px; font-size: 13px; color: var(--gold2); text-transform: none; letter-spacing: .08em; }
+.hero h1 { margin: 0; font-size: clamp(86px, 10vw, 166px); line-height: .77; letter-spacing: -.055em; }
+.hero h1 em { color: var(--gold2); font-size: .72em; }
+.hero-content > p:not(.hero-eyebrow) { max-width: 415px; margin: 28px 0; color: #f5f1e7; }
+.hero-actions .btn-icon { font-family: system-ui, sans-serif; }
+.hero-bottom { justify-content: flex-end; color: #e5e0d4; font-size: 12px; letter-spacing: .03em; }
+
+.investor-summary { background: #102a22; padding: 52px 0 43px; }
+.investor-summary-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.investor-summary h2, .project-spaces h2 { margin: 0; font-family: var(--serif); font-size: clamp(43px, 5.5vw, 77px); font-weight: 500; line-height: .93; }
+.investor-metrics { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; border-block: 1px solid var(--line); }
+.investor-metrics > div { display: flex; flex-direction: column-reverse; justify-content: center; gap: 12px; min-width: 0; padding: 24px 18px 22px; border-inline-start: 1px solid var(--line); }
+.investor-metrics > div:first-child { border-inline-start: 0; padding-inline-start: 0; }
+.investor-metrics dt { color: #c5cfc4; font-size: 13px; }
+.investor-metrics dd { color: #f2dbb1; margin: 0; font: 500 clamp(42px, 5.3vw, 77px)/.85 var(--serif); white-space: nowrap; }
+.investor-note { color: #c5cfc4; font-size: 12px; line-height: 1.5; margin: 15px 0 0; }
+
+.project-spaces { background: #0c211a; }
+.project-spaces-head { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 32px; }
+.project-spaces-head > p { margin: 0; max-width: 30ch; color: #c5cfc4; line-height: 1.55; }
+.project-spaces-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.project-spaces-grid article { background: #132e24; border-bottom: 1px solid var(--line); }
+.space-image { aspect-ratio: 2.1; background-color: #193528; background-size: cover; background-position: center; }
+.space-image-houses { background-image: url('docs/previews/aframe-56-blender.webp'); background-position: center 51%; }
+.space-image-events { background-image: url('assets/slide-3.webp'); background-size: 209% auto; background-position: 100% 57%; }
+.space-copy { padding: 22px 26px 26px; }
+.space-copy h3 { color: var(--cream); font: 500 clamp(34px, 4vw, 54px)/.95 var(--serif); margin: 0 0 12px; }
+.space-copy p { color: #c5cfc4; margin: 0 0 20px; line-height: 1.55; }
+
+.tour-poster { z-index: 3; background: linear-gradient(0deg,#091d17bf,#091d1759), url('assets/hero.webp') center/cover; padding: 24px; text-align: center; gap: 18px; text-transform: none; letter-spacing: 0; }
+#tour-status { color: #fff7e9; font: 500 clamp(39px,6vw,86px)/.94 var(--serif); }
+.tour-poster .text-link { color: #fff4dd; }
+.tour-poster .btn:disabled { opacity: .7; }
+.tour-shell[data-architecture="preview"], .tour-shell[data-architecture="loading"], .tour-shell[data-architecture="no-webgl"], .tour-shell[data-architecture="error"] { height: clamp(380px, 48vw, 630px); min-height: 0; }
+.tour-shell:is([data-architecture="preview"], [data-architecture="loading"], [data-architecture="no-webgl"], [data-architecture="error"]) :is(.tour-topbar, .tour-sidebar, .tour-location, .tour-bottom, .tour-mobile-advice, .tour-shade) { display: none; }
+:where(a,button):focus-visible { outline: 2px solid #e9b867; outline-offset: 4px; }
+
+@media (max-width: 800px) {
+  .hero { min-height: 590px; height: 88svh; align-items: end; }
+  .hero-content { padding: 0 0 95px; }
+  .hero-photo { transform: none; }
+  .hero h1 { font-size: clamp(69px, 13vw, 104px); }
+  .hero-vignette { background: linear-gradient(0deg,#071a16f5 5%,#071a16b0 45%,#071a1630 92%); }
+  .investor-summary { padding-block: 42px 34px; }
+  .investor-summary-head { flex-wrap: wrap; }
+  .investor-metrics { grid-template-columns: 1fr 1fr; }
+  .investor-metrics > div:nth-child(3) { border-inline-start: 0; padding-inline-start: 0; }
+  .investor-metrics > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .investor-metrics > div { padding-block: 19px; }
+  .project-spaces-head { align-items: start; flex-direction: column; gap: 13px; }
+  .project-spaces-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .hero h1 { font-size: clamp(60px, 15vw, 73px); }
+  .hero-actions { gap: 12px; align-items: flex-start; }
+  .hero-content > p:not(.hero-eyebrow) { margin: 22px 0; }
+}
