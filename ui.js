@@ -46,7 +46,7 @@ function loadScene() {
   shell.dataset.architecture='loading';
   status.textContent='Загружаем 3D-тур…';
   launch.disabled=true;
-  sceneLoad=import('./scene.js?v=investor1').catch(error=>{
+  sceneLoad=import('./scene.js?v=guest1').catch(error=>{
     const unsupported=error.message==='WebGL 2 unavailable';
     if(!unsupported)console.warn('Lake Village 3D initialization failed',error);
     showFallback(unsupported?'no-webgl':'error','3D-тур недоступен на этом устройстве');

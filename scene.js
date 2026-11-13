@@ -504,7 +504,7 @@ const cabinReady=Promise.all(Object.entries(houseRefs).map(async ([kind,h])=>{
  }
 }));
 const lightingReady=applyLight();
-const planLayer=document.createElement('div');planLayer.className='tour-plan-layer';planLayer.innerHTML='<img src="assets/slide-6.webp" alt="Генеральный план комплекса с нумерацией объектов" /><span>ГЕНЕРАЛЬНЫЙ ПЛАН · ПЕРЕКЛЮЧИТЕСЬ НА «ОБЛЁТ» ДЛЯ 3D</span>';stage.appendChild(planLayer);
+const planLayer=document.createElement('div');planLayer.className='tour-plan-layer';planLayer.innerHTML='<img src="assets/site-plan.svg" alt="Карта территории Lake Village" /><span>ГЕНЕРАЛЬНЫЙ ПЛАН · ПЕРЕКЛЮЧИТЕСЬ НА «ОБЛЁТ» ДЛЯ 3D</span>';stage.appendChild(planLayer);
 const walkNav=document.createElement('div');walkNav.id='walk-nav';walkNav.className='walk-nav';walkNav.hidden=true;walkNav.innerHTML='<button data-move="KeyW" aria-label="Вперёд">↑</button><div><button data-move="KeyA" aria-label="Влево">←</button><button data-move="KeyS" aria-label="Назад">↓</button><button data-move="KeyD" aria-label="Вправо">→</button></div>';
 stage.append(walkNav);
 walkNav.querySelectorAll('button').forEach(b=>{

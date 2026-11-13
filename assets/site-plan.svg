@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" fill="none" role="img" aria-labelledby="plan-title plan-description">
+  <title id="plan-title">План территории Lake Village</title>
+  <desc id="plan-description">Схема расположения домов, пляжа, пирса, оранжереи и ресторана вокруг озера. Въезд и парковка находятся внизу.</desc>
+  <defs>
+    <pattern id="woodland" width="92" height="84" patternUnits="userSpaceOnUse">
+      <path d="M8 22l8-13 8 13ZM50 63l9-15 9 15ZM75 30l5-9 5 9ZM26 75l5-9 5 9Z" fill="#587960" opacity=".45"/>
+      <circle cx="36" cy="22" r="7" fill="#719177" opacity=".27"/><circle cx="73" cy="72" r="5" fill="#719177" opacity=".27"/>
+    </pattern>
+    <pattern id="water" width="78" height="25" patternUnits="userSpaceOnUse">
+      <path d="M5 8h25m18 11h23" stroke="#84b4af" stroke-opacity=".16" stroke-width="1"/>
+    </pattern>
+    <symbol id="a" viewBox="0 0 38 32">
+      <path d="M1 11 20 1l17 12-1 18H2Z" fill="#c4aa82" stroke="#263b31" stroke-width="2"/>
+      <path d="M1 11 20 1l1 29H2Z" fill="#76664f"/><path d="M21 30 20 1l17 12" stroke="#ecdcb9" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="b" viewBox="0 0 41 29">
+      <rect x="1" y="1" width="39" height="27" rx="3" fill="#bd9f76" stroke="#273b32" stroke-width="2"/>
+      <path d="M3 5h35v10H3Z" fill="#675c4c"/><path d="M3 15h35" stroke="#ecddba" stroke-width="1.5"/>
+    </symbol>
+    <style>
+      text{font-family:system-ui,sans-serif}
+      .label{fill:#f6ead1;font-weight:650;font-size:20px;paint-order:stroke;stroke:#183629;stroke-width:5px;stroke-linejoin:round}
+      .waterlabel{fill:#e1efdf;font-size:29px;letter-spacing:6px;font-weight:500}
+      .note{fill:#d3dfcc;font-size:16px}
+    </style>
+  </defs>
+  <rect width="1280" height="820" fill="#234637"/>
+  <rect width="1280" height="820" fill="url(#woodland)"/>
+  <path d="M183 650C144 553 150 276 228 172S443 96 639 108c210-14 354 8 422 114 61 95 79 272 24 391-59 128-134 127-286 127H384c-107 0-171-29-201-90Z" fill="#54735b" stroke="#7f9871" stroke-width="2"/>
+  <path d="M799 819v-92c0-27-34-56-74-60H555c-49 0-113 14-163 31l-98 33-99-49m604 52c75 1 151-9 200-51" stroke="#adac93" stroke-width="15" stroke-linecap="round"/>
+  <path d="M644 630c-114 0-229-14-301-63-86-58-107-147-68-228 52-110 201-136 367-136s310 28 359 130c43 87 11 180-66 231-68 45-186 67-291 66Z" stroke="#cbb58d" stroke-width="9"/>
+  <path d="M637 589c-114-1-212-15-277-56-71-45-91-111-59-177 43-91 180-119 337-119s289 26 332 114c34 68 7 134-55 178-63 44-178 60-278 60Z" fill="#245e63" stroke="#a7b29a" stroke-width="3"/>
+  <path d="M637 589c-114-1-212-15-277-56-71-45-91-111-59-177 43-91 180-119 337-119s289 26 332 114c34 68 7 134-55 178-63 44-178 60-278 60Z" fill="url(#water)"/>
+  <path d="M545 584c48 7 129 8 183-2l-6 12c-57 13-127 14-173 2Z" fill="#e0c193"/>
+  <path d="M629 201h15v98h38v24h-93v-24h40Z" fill="#c6a67b" stroke="#5c5844" stroke-width="3"/>
+  <path d="M407 195v-49h104v49Zm317 0v-53h132v53Z" fill="#c1a77b" stroke="#263c30" stroke-width="3"/>
+  <path d="M414 152h90v35h-90Z" fill="#99b8a7"/><path d="M730 148h120v34H730Z" fill="#8a745a"/><path d="M737 161h107" stroke="#d7c5a0" stroke-width="4"/>
+  <g width="38" height="32">
+    <use href="#a" x="266" y="237" width="38" height="32"/><use href="#a" x="231" y="273" width="38" height="32"/><use href="#a" x="209" y="316" width="38" height="32"/><use href="#a" x="197" y="363" width="38" height="32"/><use href="#a" x="199" y="410" width="38" height="32"/><use href="#a" x="210" y="457" width="38" height="32"/><use href="#a" x="233" y="501" width="38" height="32"/>
+  </g>
+  <g>
+    <use href="#b" x="967" y="234" width="41" height="29"/><use href="#b" x="1000" y="271" width="41" height="29"/><use href="#b" x="1025" y="315" width="41" height="29"/><use href="#b" x="1040" y="363" width="41" height="29"/><use href="#b" x="1042" y="410" width="41" height="29"/><use href="#b" x="1034" y="457" width="41" height="29"/><use href="#b" x="1013" y="502" width="41" height="29"/>
+  </g>
+  <circle cx="258" cy="662" r="34" fill="#425747" stroke="#c4b183" stroke-width="2"/><path d="M249 649v26m18-26v26m-18-13h18" stroke="#d7c9a6" stroke-width="3"/>
+  <rect x="380" y="625" width="91" height="34" rx="8" fill="#ab9a6c"/>
+  <rect x="533" y="674" width="81" height="35" rx="3" fill="#a28c6b"/>
+  <rect x="898" y="605" width="113" height="63" rx="6" fill="#57635c" stroke="#c6bd9d" stroke-width="2"/>
+  <path d="M921 616v16m17-16v16m17-16v16m17-16v16m17-16v16m-68 10v15m17-15v15m17-15v15m17-15v15m17-15v15" stroke="#c6bd9d" stroke-width="2"/>
+  <path d="M774 748h50" stroke="#dcc193" stroke-width="13" stroke-linecap="round"/>
+  <g text-anchor="middle" class="label">
+    <text x="456" y="133">Оранжерея</text><text x="790" y="129">Ресторан</text>
+    <text x="635" y="348">Пирс</text><text x="130" y="408">A-Frame</text><text x="1141" y="408">Barnhouse</text>
+    <text x="635" y="567">Пляж</text><text x="425" y="683">Детская зона</text>
+    <text x="574" y="735">Ресепшн</text><text x="955" y="694">Парковка</text><text x="799" y="783">Въезд</text>
+  </g>
+  <text class="waterlabel" text-anchor="middle" x="639" y="445">ОЗЕРО</text>
+  <text class="note" x="49" y="778">Схема территории · концепция</text>
+</svg>
