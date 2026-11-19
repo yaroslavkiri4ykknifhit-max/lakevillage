@@ -388,11 +388,18 @@ for material in bpy.data.materials:
         for link in material.node_tree.links:
             if link.from_node.type=='TEX_IMAGE' and link.from_socket.name=='Alpha':alpha_images.add(link.from_node.image)
 preview_textures=OUT/'preview-textures';preview_textures.mkdir(exist_ok=True)
-for i,image in enumerate(bpy.data.images):
-    if image.source!='FILE' or not image.has_data or image.type!='IMAGE':continue
+for i,image in enumerate(list(bpy.data.images)):
+    if image.source!='FILE' or image.type!='IMAGE':continue
+    _=image.pixels[0]
     keep_alpha=image in alpha_images
     image.file_format='PNG' if keep_alpha else 'JPEG'
     image.filepath_raw=str(preview_textures/f'image-{i:02d}.{ "png" if keep_alpha else "jpg" }')
-    image.save();image.pack()
+    image.save()
+    replacement=bpy.data.images.load(image.filepath_raw,check_existing=False)
+    replacement.colorspace_settings.name=image.colorspace_settings.name
+    for material in bpy.data.materials:
+        if material.use_nodes:
+            for node in material.node_tree.nodes:
+                if node.type=='TEX_IMAGE' and node.image==image:node.image=replacement
 bpy.ops.export_scene.gltf(filepath=str(OUT/'Lake-Village-AFrame-Detail.glb'),export_format='GLB',export_image_format='AUTO',export_extras=True,export_cameras=False,export_lights=False,export_apply=True)
 print('DETAIL_FINISHED',flush=True)
